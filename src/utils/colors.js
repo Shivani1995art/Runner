@@ -1,0 +1,40 @@
+const Colors = {
+    orange: "#FF8800",
+    blue: "#3B63FE",
+    darkGray: "#B0B0B0",
+    borderColor: "#E4E4EB",
+    black:"#28293D",
+    black1:"#0A0909",
+    Green:"#57EBA1",
+    borderColor1:"#8F90A6",
+    white:'#FFFFFF',
+    bright_red:'#FB3838',
+    cyan:"#00CFDE",
+    gray:"gray",
+    cardbg:"#F7F7F7",
+    activetabbg:"#FFCC00",
+    teal:"#00CFDE",
+    aquablue:"#A9EFF2",
+    lightred:"#FF6767",
+    red1:"#FF9393",
+    red2:"#FB3838",
+    green2:"#06C270",
+    green3:"#39D98A",
+    blue1:"#93A9FF",
+    blue2:"#5E7FFF",
+    orange1:"#FDAC42",
+    orange2:"#FCCC75",
+    yellow:"#FDED72",
+    yellow1:"#FDDD48",
+    teal1:"#73DFE7",
+    seagreen:"#6BDFDC",
+    seagreen1:"#1BA09C",
+    seagreen2:"#46C2BE",
+    black2:"#172B4D",
+    customerInfoCardBg:"#EBF3FF",
+    
+
+
+  };
+  
+  export default Colors;

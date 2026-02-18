@@ -1,0 +1,65 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/Inter_18pt-Bold.ttf",
+      "sha1": "001ec1ea9a5f752d3248769c174b6fc030ab7dab"
+    },
+    {
+      "path": "src/assets/fonts/Inter_18pt-BoldItalic.ttf",
+      "sha1": "070da88186139923731769aa07d7eaf6d5dc32ee"
+    },
+    {
+      "path": "src/assets/fonts/Inter_18pt-ExtraBold.ttf",
+      "sha1": "d01b4a9a01dfdb6d9a5c6ec153d528d70706d885"
+    },
+    {
+      "path": "src/assets/fonts/Inter_24pt-Italic.ttf",
+      "sha1": "eb4fb205a438f0e3eb85039a40cd2cf23c774523"
+    },
+    {
+      "path": "src/assets/fonts/Inter_24pt-Light.ttf",
+      "sha1": "ca9d1cbe741fb0ad6f9e469f2b390a79629d10ad"
+    },
+    {
+      "path": "src/assets/fonts/Inter_24pt-Regular.ttf",
+      "sha1": "b9984093c0b2b612da5e58e4d4e1ba8c255353dc"
+    },
+    {
+      "path": "src/assets/fonts/Inter_28pt-Medium.ttf",
+      "sha1": "d135ba8c8d7b74a8878a4a73794ddfa739fa7348"
+    },
+    {
+      "path": "src/assets/fonts/Inter_28pt-MediumItalic.ttf",
+      "sha1": "16a84cb180cbe4b50b31c88a4a8ded8112e28df1"
+    },
+    {
+      "path": "src/assets/fonts/Inter_28pt-SemiBold.ttf",
+      "sha1": "49c4ab71faa7118520a21452906e04f1340c864c"
+    },
+    {
+      "path": "src/assets/fonts/JosefinSans-Bold.ttf",
+      "sha1": "d94bebbdb9af646a3f8b206e89e53a31535d88c6"
+    },
+    {
+      "path": "src/assets/fonts/JosefinSans-BoldItalic.ttf",
+      "sha1": "75d199240e466d070a277185772d8abf67b0ef83"
+    },
+    {
+      "path": "src/assets/fonts/JosefinSans-Medium.ttf",
+      "sha1": "a8b8f3878775c64b332c11bc9a66759eeb0537a0"
+    },
+    {
+      "path": "src/assets/fonts/JosefinSans-MediumItalic.ttf",
+      "sha1": "4563bb502119fa99d31a3a4d1ad59a738ffbb464"
+    },
+    {
+      "path": "src/assets/fonts/JosefinSans-Regular.ttf",
+      "sha1": "675a4c882e3946047c042c83c66fa803e5aa6554"
+    },
+    {
+      "path": "src/assets/fonts/JosefinSans-SemiBold.ttf",
+      "sha1": "e52027fd05145d1a41447690f745666c83f91e9e"
+    }
+  ]
+}

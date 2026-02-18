@@ -1,0 +1,73 @@
+export const itemListData = [
+    {
+      id: 1,
+      qty: 1,
+      title: "Woodford Reserve",
+      image: "https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg?auto=compress&cs=tinysrgb&w=600",
+      backgroundColor: "#FFE7CC",
+    },
+    {
+      id: 2,
+      qty: 2,
+      title: "Jack Daniel's",
+      image: "https://images.pexels.com/photos/336766/pexels-photo-336766.jpeg?auto=compress&cs=tinysrgb&w=600",
+      backgroundColor: "#E3EAFF",
+    },
+    // {
+    //   id: 3,
+    //   qty: 1,
+    //   title: "Johnnie Walker Black",
+    //   image: "https://images.pexels.com/photos/681847/pexels-photo-681847.jpeg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#23C58F",
+    // },
+    // {
+    //   id: 4,
+    //   qty: 3,
+    //   title: "Jameson Irish Whiskey",
+    //   image: "https://images.pexels.com/photos/1556914/pexels-photo-1556914.jpeg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#F2455F",
+    // },
+    // {
+    //   id: 5,
+    //   qty: 1,
+    //   title: "Chivas Regal 12",
+    //   image: "https://images.pexels.com/photos/1251196/pexels-photo-1251196.jpeg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#9C27B0",
+    // },
+    // {
+    //   id: 6,
+    //   qty: 2,
+    //   title: "Red Label",
+    //   image: "https://images.pexels.com/photos/1211887/pexels-photo-1211887.jpeg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#03A9F4",
+    // },
+    // {
+    //   id: 7,
+    //   qty: 1,
+    //   title: "Old Monk Rum",
+    //   image: "https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#795548",
+    // },
+    // {
+    //   id: 8,
+    //   qty: 4,
+    //   title: "Glenfiddich 12",
+    //   image: "https://images.pexels.com/photos/1407854/pexels-photo-1407854.jpeg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#4CAF50",
+    // },
+    // {
+    //   id: 9,
+    //   qty: 1,
+    //   title: "Hennessy VS",
+    //   image: "https://images.pexels.com/photos/4784/alcohol-bar-party-cocktail.jpg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#FF7043",
+    // },
+    // {
+    //   id: 10,
+    //   qty: 2,
+    //   title: "Patrón Tequila",
+    //   image: "https://images.pexels.com/photos/126735/pexels-photo-126735.jpeg?auto=compress&cs=tinysrgb&w=600",
+    //   backgroundColor: "#009688",
+    // },
+  ];
+  

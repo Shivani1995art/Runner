@@ -1,45 +1,40 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
+import { StatusBar, StyleSheet, Text, View } from 'react-native'
+import React from 'react'
+import SplashScreen from './src/screens/SplashScreen/SplashScreen'
+import Routes from './src/navigation/Routes'
+import OnBoardingScreen from './src/screens/OnBoarding/OnBoardingScreen'
+import { AuthProvider } from './src/context/AuthContext'
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Toast from 'react-native-toast-message'
+import { LoaderProvider } from './src/context/LoaderContext'
+import { NetworkProvider } from './src/context/NetworkProvider'
+import { ToastProvider } from './src/hooks/ToastProvider'
+const App = () => {
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
+    <GestureHandlerRootView style={styles.AppContainer}>
+      <StatusBar barStyle="dark-content"
+        hidden
       />
-    </View>
-  );
+      {/* <Routes /> */}
+       <NetworkProvider>
+        <AuthProvider>
+          <LoaderProvider>
+             <ToastProvider>
+  <Routes />
+            <Toast />
+             </ToastProvider>
+          
+          </LoaderProvider>
+        </AuthProvider>
+       </NetworkProvider>
+      
+    </GestureHandlerRootView>
+  )
 }
-
+export default App
 const styles = StyleSheet.create({
-  container: {
+  AppContainer: {
     flex: 1,
-  },
-});
 
-export default App;
+  }
+})

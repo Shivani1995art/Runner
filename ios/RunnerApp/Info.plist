@@ -20,6 +20,8 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photo library to allow users to select profile images</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
@@ -33,8 +35,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We use your location to find nearby cabanas</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>We use notifications to keep you updated</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -51,5 +55,24 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+
+	<key>UIAppFonts</key>
+	<array>
+		<string>Inter_18pt-Bold.ttf</string>
+		<string>Inter_18pt-BoldItalic.ttf</string>
+		<string>Inter_18pt-ExtraBold.ttf</string>
+		<string>Inter_24pt-Italic.ttf</string>
+		<string>Inter_24pt-Light.ttf</string>
+		<string>Inter_24pt-Regular.ttf</string>
+		<string>Inter_28pt-Medium.ttf</string>
+		<string>Inter_28pt-MediumItalic.ttf</string>
+		<string>Inter_28pt-SemiBold.ttf</string>
+		<string>JosefinSans-Bold.ttf</string>
+		<string>JosefinSans-BoldItalic.ttf</string>
+		<string>JosefinSans-Medium.ttf</string>
+		<string>JosefinSans-MediumItalic.ttf</string>
+		<string>JosefinSans-Regular.ttf</string>
+		<string>JosefinSans-SemiBold.ttf</string>
+	</array>
 </dict>
 </plist>
