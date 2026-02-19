@@ -84,9 +84,9 @@ const OrderHistoryCard = () => {
         params: { page, limit: 10 },
       });
 
-      logger.log('Order history response:', response.data);
+      logger.log('Order history response:', response.data?.data);
 
-      const { orders: newOrders, total_pages } = response.data;
+      const { orders: newOrders, total_pages } = response.data?.data || {};
 
       setOrders(prev => isLoadMore ? [...prev, ...newOrders] : newOrders);
       setTotalPages(total_pages);
@@ -168,7 +168,7 @@ const OrderHistoryCard = () => {
     );
   }
 
-  if (orders.length === 0) {
+  if (orders?.length === 0) {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorEmoji}>📦</Text>

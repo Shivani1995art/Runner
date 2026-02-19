@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
 import {
   FlatList, ScrollView,
   StyleSheet, Text, View, ActivityIndicator,
   Image,
   Linking,
+  BackHandler,
 } from 'react-native';
 import CustomerInfoCard from '../../components/cards/CustmerInfoCard';
 import InfoRow from '../../components/Row/InfoRow';
@@ -23,6 +24,7 @@ import { useMapLocation } from '../../hooks/useMapLocation';
 import MapViewComponent from '../../components/Map/MapViewComponent';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/ToastProvider';
+import { useFocusEffect } from '@react-navigation/native';
 
 const CustomerInfoScreen = ({ navigation, route }) => {
   const [showSlideModal, setShowSlideModal]     = useState(true);
@@ -36,9 +38,28 @@ const CustomerInfoScreen = ({ navigation, route }) => {
   const hasFetchedRef = useRef(false);
 
 
+// ── 1. Disable Back Button ───────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Return true to stop the default back behavior
+        return true;
+      };
 
+      // Add listener for hardware back button (Android)
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
 
+// Also disable back gesture/header button via navigation options
+  useEffect(() => {
+    navigation.setOptions({
+      gestureEnabled: false,
+    });
+  }, [navigation]);
   // ── Order status ───────────────────────────────
   logger.log('orderStatus', order?.status);
   const orderStatus = order?.status ?? 'picked_up';
@@ -460,8 +481,9 @@ const handleDeliverOrder = async () => {
       <SuccessModal
         icon={Greenticksvg}
         visible={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        onPress={() => {
+       // onClose={() => setShowSuccessModal(false)}
+       onClose={() => {}} 
+       onPress={() => {
           setShowSuccessModal(false);
           navigation.navigate('Home');
         }}

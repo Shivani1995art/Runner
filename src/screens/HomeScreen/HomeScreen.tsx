@@ -32,11 +32,11 @@ const formatDate = (date?: string) => {
   });
 };
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation, route }) => {
   const [showSlideModal, setShowSlideModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showPermission, setShowPermission] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);         // ← pull-to-refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [AndroidLocationLoading, setAndroidLocationLoading] = useState(false);
 
   const { checkLocationPermission } = useAppPermissions();
@@ -48,12 +48,16 @@ const HomeScreen = ({ navigation }) => {
     loadOrders,
     loadRunnerStatus,
     runnerStatus,
+    setRunnerStatus,
     toggleRunnerDuty,
     isLoadingOrders,
     isLoadingStatus,
     isAccepting,
     handleAcceptOrder,
   } = useOrders();
+//logger.log('runnerStatus', runnerStatus);
+  // Get initialStatus from route params (passed from AppBootstrap)
+  const initialStatus = route?.params?.initialStatus;
 
   // ── Location helpers ────────────────────────────────────────────────────────
   const requestLocationPermission = async (): Promise<boolean> => {
@@ -101,54 +105,78 @@ const HomeScreen = ({ navigation }) => {
   };
 
   // ── Initial load ────────────────────────────────────────────────────────────
-useEffect(() => {
-  const init = async () => {
-    const hasLocationPermission = await checkLocationPermission();
-    if (!hasLocationPermission) {
-      setShowPermission(true);
-      return;
-    }
+  // 1. Check location permission → show modal if denied
+  // 2. Use initialStatus from AppBootstrap if available (avoids duplicate API call)
+  // 3. If on duty + no active assignment → load available orders
+  // ───────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const init = async () => {
+      const hasLocationPermission = await checkLocationPermission();
+      if (!hasLocationPermission) {
+        setShowPermission(true);
+        return;
+      }
 
-    const coords = await fetchLocation();
-    if (!coords?.latitude || !coords?.longitude) return;
+      let status = initialStatus;
 
-    // 1️⃣ Check runner status
-    const status = await loadRunnerStatus((assignment) => {
-      navigation.navigate('CustomerInfoScreen', { order: assignment });
-    });
+      // If no initialStatus passed (e.g., user navigated back from another screen),
+      // fetch it now
+      if (!status) {
+        const fetchedStatus = await loadRunnerStatus((assignment) => {
+          navigation.navigate('CustomerInfoScreen', { order: assignment });
+        });
+        status = fetchedStatus;
+      } else {
+        // Use the status passed from AppBootstrap
+        setRunnerStatus(status);
+        logger.log('Using initialStatus from AppBootstrap:', status);
+      }
 
-    // 2️⃣ If ON duty and no active assignment → load orders
-    if (status?.isOnDuty && !status?.hasActiveAssignment) {
-      await loadOrders(coords.latitude, coords.longitude);
-    }
-  };
+      // If ON duty and no active assignment → load orders
+      if (status?.is_on_duty) {
+        const coords = await fetchLocation();
+        logger.log('coords', coords);
+        if (coords?.latitude && coords?.longitude) {
+          await loadOrders(coords.latitude, coords.longitude);
+        }
+      }
+    };
 
-  init();
-}, []);
-
+    init();
+  }, [initialStatus]);
 
   // ── Pull-to-refresh ─────────────────────────────────────────────────────────
-  // Pulls fresh orders from the API when the user drags the list from the top.
+  // Only fetch orders if runner is on duty (checked via local runnerStatus state)
+  // ───────────────────────────────────────────────────────────────────────────
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const coords = await fetchLocation();
-      if (!coords?.latitude || !coords?.longitude) return;
-      await loadOrders(coords.latitude, coords.longitude, (assignment) => {
-        navigation.navigate('CustomerInfoScreen', { order: assignment });
-      });
+      // Refresh status first
+      // const status = await loadRunnerStatus((assignment) => {
+      //   navigation.navigate('CustomerInfoScreen', { order: assignment });
+      // });
+logger.log('runnerStatus', runnerStatus);
+      // Only load orders if on duty + no active assignment
+    //  if (runnerStatus?.is_on_duty) {
+        const coords = await fetchLocation();
+        logger.log('coords', coords);
+        if (coords?.latitude && coords?.longitude) {
+          await loadOrders(coords.latitude, coords.longitude);
+        }
+     // }
     } finally {
       setIsRefreshing(false);
     }
   }, []);
 
-  // ── Refresh orders list (used after "already assigned") ────────────────────
+  // ── Refresh orders after "already assigned" ────────────────────────────────
   const refreshOrders = async () => {
+    if (!runnerStatus?.is_on_duty) return; // local check
+
     const coords = await fetchLocation();
-    if (!coords?.latitude || !coords?.longitude) return;
-    loadOrders(coords.latitude, coords.longitude, (assignment) => {
-      navigation.navigate('CustomerInfoScreen', { order: assignment });
-    });
+    if (coords?.latitude && coords?.longitude) {
+      await loadOrders(coords.latitude, coords.longitude);
+    }
   };
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -169,33 +197,26 @@ useEffect(() => {
     setShowSlideModal(true);
   };
 
-  // ── Accept order with "already assigned" guard ──────────────────────────────
-  // handleAcceptOrder returns { alreadyAssigned: true } when the server responds
-  // with { message: 'Order already assigned' }. In that case we:
-  //   1. Close the modal immediately
-  //   2. Show an error toast
-  //   3. Refresh the orders list so the stale order disappears
- 
-const onPressAccept = async () => {
-  await handleAcceptOrder(
-    selectedOrder?.id,
-    (acceptedOrder) => {
-        logger.log('====acceptedOrder======',acceptedOrder)
-      // ✅ Happy path
-      setShowSlideModal(false);
-      navigation.navigate('CustomerInfoScreen', {
-        order: acceptedOrder ?? selectedOrder,
-      });
-    },
-    () => {
-       logger.log('====Already assigned path======')
-      // ❌ Already assigned — just close modal and refresh
-      // Toast is shown by the hook above
-      setShowSlideModal(false);
-      refreshOrders();
-    },
-  );
-};
+  const onPressAccept = async () => {
+    await handleAcceptOrder(
+      selectedOrder?.id,
+      (acceptedOrder) => {
+        logger.log('====acceptedOrder======', acceptedOrder);
+        setShowSlideModal(false);
+        navigation.navigate('CustomerInfoScreen', {
+          order: acceptedOrder ?? selectedOrder,
+        });
+      },
+      () => {
+        logger.log('====Already assigned path======');
+        setShowSlideModal(false);
+        refreshOrders();
+      },
+    );
+  };
+const itemCount = selectedOrder?.order_lines?.length ?? 0;
+
+const modalHeightPercentage = itemCount <= 1 ? 0.52 : 0.60;
 
 
   return (
@@ -203,14 +224,15 @@ const onPressAccept = async () => {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       <CustomHeaderHome
-        profileImage={user?.image_url}//|| 'https://images.pexels.com/photos/2232/vegetables-italian-pizza-restaurant.jpg?auto=compress&cs=tinysrgb&h=400&w=600'
+        profileImage={user?.image_url}
         displayName={user?.display_name}
         location={outlet?.name}
         onNotificationPress={handleNotificationPress}
         NotificationIcon={<Notification />}
         onPress={() => navigation.navigate('ProfileScreen')}
       />
-      <View style={{ paddingHorizontal: ms(16),}}>
+
+      <View style={{ paddingHorizontal: ms(16) }}>
         <DateCard
           date={formatDate(runnerStatus?.last_clock_in)}
           deliveryCount={runnerStatus?.total_delivered || 0}
@@ -220,7 +242,6 @@ const onPressAccept = async () => {
         />
       </View>
 
-      {/* ── Pull-to-refresh ScrollView ──────────────────────────────────────── */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
@@ -229,20 +250,18 @@ const onPressAccept = async () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
-            colors={[Colors.orange]}        // Android spinner color
-            tintColor={Colors.orange}       // iOS spinner color
+            colors={[Colors.orange]}
+            tintColor={Colors.orange}
           />
         }
       >
-    
-
         {runnerStatus?.is_on_duty === false ? (
           <View style={styles.offDutyContainer}>
             <Text style={styles.offDutyText}>You're on a break</Text>
             <Text style={styles.offDutySubText}>Resume duty to see available orders</Text>
           </View>
 
-        ) : isLoadingOrders ? (
+        ) : isLoadingOrders || isRefreshing ? (
           <>
             <OrderCardShimmer />
             <OrderCardShimmer />
@@ -264,10 +283,11 @@ const onPressAccept = async () => {
             renderItem={({ item }) => (
               <OrderCard
                 distance={item.distance}
-                time={item.time}
+                estimatedReadyAt={item.estimatedReadyAt}
                 location={item.location}
+                status={item.status}
                 onAccept={() => PressAcceptOrder(item.id)}
-                orcontainerStyle={{ backgroundColor: Colors.cardbg }}
+                orcontainerStyle={{ backgroundColor: Colors.cardbg,paddingVertical: vs(8) }}
               />
             )}
           />
@@ -275,18 +295,27 @@ const onPressAccept = async () => {
       </ScrollView>
 
       {/* ── Order detail modal ──────────────────────────────────────────────── */}
-      <BottomGradientModal visible={showSlideModal} onClose={() => setShowSlideModal(false)}>
+      <BottomGradientModal
+       visible={showSlideModal}
+  onClose={() => {
+    logger.log('showSlideModal', showSlideModal);
+    setShowSlideModal(false);
+  }}
+  maxHeightPercentage={modalHeightPercentage}
+  minHeightPercentage={0.40}
+      >
         <View style={{ paddingHorizontal: ms(16), paddingBottom: vs(20), flex: 1 }}>
           <OrderCard
             distance={selectedOrder?.distance ?? '—'}
-            time={selectedOrder?.time ?? '—'}
+            estimatedReadyAt={selectedOrder?.estimatedReadyAt ?? '—'}
             location={selectedOrder?.location ?? '—'}
+            status={selectedOrder?.status ?? '—'}
             orcontainerStyle={styles.orcontainerStyle}
-            timechipStyle={{ backgroundColor: 'transparent' }}
+           // timechipStyle={styles.timeChipStyle}
             rightText='Deliver to'
             showOrderButton={false}
-            timeText={{ color: Colors.black }}
-            ClockColor='black'
+           // timeText={{ color: Colors.black }}
+           // ClockColor='black'
             locationUnderline={false}
           />
 
@@ -294,7 +323,7 @@ const onPressAccept = async () => {
             No. of Items: {selectedOrder?.order_lines?.length ?? 0}
           </Text>
 
-          <View style={{ flex: 1, marginBottom: hp(3) }}>
+          <View style={{ flex: 1, marginBottom: hp(1)}}>
             <FlashList
               data={isLoadingOrders ? Array(3).fill({}) : (selectedOrder?.order_lines ?? [])}
               estimatedItemSize={30}
@@ -312,21 +341,31 @@ const onPressAccept = async () => {
             title='Accept Order'
             style={styles.acceptButton}
             loading={isAccepting}
-            onPress={onPressAccept}   // ← updated handler
+            onPress={onPressAccept}
           />
         </View>
       </BottomGradientModal>
+
+
+
 
       <PermissionFlowModal
         visible={showPermission}
         onComplete={async () => {
           setShowPermission(false);
-          const coords = await fetchLocation();
-          logger.log('coords==>', coords);
-          if (!coords?.latitude || !coords?.longitude) return;
-          loadOrders(coords.latitude, coords.longitude, (assignment) => {
+          
+          // Check status first
+          const status = await loadRunnerStatus((assignment) => {
             navigation.navigate('CustomerInfoScreen', { order: assignment });
           });
+
+          // Only fetch orders if on duty
+          if (status?.isOnDuty && !status?.hasActiveAssignment) {
+            const coords = await fetchLocation();
+            if (coords?.latitude && coords?.longitude) {
+              await loadOrders(coords.latitude, coords.longitude);
+            }
+          }
         }}
       />
     </View>
@@ -340,13 +379,22 @@ const styles = StyleSheet.create({
   offDutyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: vs(60) },
   offDutyText: { fontSize: fontSize(18), fontFamily: Typography.Bold.fontFamily, color: Colors.black1, marginBottom: vs(6) },
   offDutySubText: { fontSize: fontSize(14), fontFamily: Typography.Regular.fontFamily, color: Colors.borderColor1 },
+
+
+  floatingButtonContainer: {
+  position: 'absolute',
+  bottom: vs(16),
+  left: ms(16),
+  right: ms(16),
+},
+
+
   acceptButton: {
     borderRadius: ms(10),
     backgroundColor: Colors.orange,
     width: '90%',
     height: vs(50),
     alignSelf: 'center',
-    bottom: 30,
   },
   NoOftextStyle: {
     paddingHorizontal: ms(16),
@@ -356,7 +404,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.black1,
   },
-  orcontainerStyle: { backgroundColor: 'transparent', marginTop: vs(20), padding: 0, paddingHorizontal: ms(16) },
+  orcontainerStyle: { backgroundColor: 'transparent'},
+    timeChipStyle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+   
+  },
 });
 
 export default HomeScreen;

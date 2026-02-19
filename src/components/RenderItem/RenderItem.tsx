@@ -4,61 +4,67 @@ import { ms, vs, fontSize, wp } from '../../utils/responsive';
 import Colors from '../../utils/colors';
 import { Typography } from '../../utils/typography';
 
-const RenderItem = ({ item,index }: { item: any,index:number }) => {
+const RenderItem = ({ item, index }: { item: any; index: number }) => {
   const menuItem = item?.menu_item;
   const imageUrl = Array.isArray(menuItem?.image_url)
     ? menuItem.image_url[0]
     : menuItem?.image_url;
 
-const warmShades = [
-  '#fff4dc',
-  '#fdeecf',
-  '#fce5bd',
-  '#f7d8a4',
-  '#f2c88a',
-  '#ecb770',
-];
-const coolShades = [
-  '#f1f4fd',
-  '#e6ebf9',
-  '#d8def4',
-  '#c6cff0',
-  '#b4c0eb',
-  '#a2b1e6',
-];
-const bgColor =
-  index % 2 === 0
-    ? warmShades[index % warmShades.length]
-    : coolShades[index % coolShades.length];
+  const warmShades = [
+    '#fff4dc',
+    '#fdeecf',
+    '#fce5bd',
+    '#f7d8a4',
+    '#f2c88a',
+    '#ecb770',
+  ];
+  const coolShades = [
+    '#f1f4fd',
+    '#e6ebf9',
+    '#d8def4',
+    '#c6cff0',
+    '#b4c0eb',
+    '#a2b1e6',
+  ];
 
-//const bgColor = index % 2 === 0 ? '#fce5bd' : '#d8def4';
+  const bgColor =
+    index % 2 === 0
+      ? warmShades[index % warmShades.length]
+      : coolShades[index % coolShades.length];
+
   return (
-   <View style={[styles.container, { backgroundColor: bgColor }]}>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
+
+      {/* Quantity */}
       <View style={styles.quantityBadge}>
         <Text style={styles.quantityText}>{item.quantity} x</Text>
       </View>
 
+      {/* Image */}
       <Image
         source={{ uri: imageUrl }}
         style={styles.image}
         resizeMode="cover"
       />
 
+      {/* Info Section */}
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={2}>
+        <Text style={styles.name}>
           {menuItem?.name}
         </Text>
 
-        {/* {item.options?.length > 0 && (
-          <Text style={styles.options} numberOfLines={1}>
-            {item.options.map((o: any) => o.name).join(', ')}
-          </Text>
-        )} */}
+        {/* 🔥 Add-Ons Section */}
+        {item.options?.length > 0 && (
+          <View style={styles.optionsContainer}>
+            {item.options.map((opt: any) => (
+              <Text key={opt.id} style={styles.optionText}>
+                + {opt.name}
+              </Text>
+            ))}
+          </View>
+        )}
       </View>
 
-      {/* <Text style={styles.price}>
-        ${(item.price / 100).toFixed(2)}
-      </Text> */}
     </View>
   );
 };
@@ -76,6 +82,16 @@ const styles = StyleSheet.create({
     marginBottom: vs(8),
     gap: ms(10),
   },
+  optionsContainer: {
+  marginTop: vs(4),
+},
+
+optionText: {
+  fontSize: fontSize(11),
+  fontFamily: Typography.Regular.fontFamily,
+  color: Colors.borderColor1,
+},
+
   quantityBadge: {
    // backgroundColor: Colors.orange,
    // borderRadius: ms(6),
