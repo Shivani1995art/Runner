@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform, StatusBar, Keyboard } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform, StatusBar, Keyboard, Dimensions } from 'react-native';
 import React, { useContext, useRef, useState } from 'react';
 import GradientContainer from '../../components/Gradient/GradientContainer';
 import { vs, ms, s, wp, hp, fontSize } from '../../utils/responsive';
@@ -18,6 +18,8 @@ import { AuthContext } from '../../context/AuthContext';
 import Toast from 'react-native-toast-message';
 import { useAppPermissions } from '../../hooks/useAppPermissions';
 import PermissionFlowModal from '../../components/modals/PermissionFlowModal';
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.65;
 const LoginScreen = ({ navigation }) => {
     const [showrestroui, setShowrestroui] = useState(false);
     const passwordRef = useRef(null);
@@ -25,13 +27,13 @@ const LoginScreen = ({ navigation }) => {
     const [resortId, setResortId] = useState('');
     const [userName, setUserName] = useState('')
     const [userPassword, setUserPassword] = useState('')
-        const { checkNotificationPermission, checkLocationPermission } = useAppPermissions()
+    const { checkNotificationPermission, checkLocationPermission } = useAppPermissions()
     const { loginUser } = useAuth()
     const [secure, setSecure] = useState(true);
-  const [showPermission, setShowPermission] = useState(false)
-   const pendingToken = useRef(null);
-   const pendingUser = useRef(null);
-   const pendingOutlet = useRef(null);
+    const [showPermission, setShowPermission] = useState(false)
+    const pendingToken = useRef(null);
+    const pendingUser = useRef(null);
+    const pendingOutlet = useRef(null);
     const { login } = useContext(AuthContext);
     const { show, hide } = useContext(LoaderContext);
     const isFormValid = userName.trim().length > 0 && userPassword.trim().length > 0;
@@ -45,34 +47,22 @@ const LoginScreen = ({ navigation }) => {
     // };
 
 
-     const handleLogin = async () => {
+    const handleLogin = async () => {
         logger.log("called===>")
         try {
             Keyboard.dismiss()
-          //  show()
+            //  show()
             const res = await loginUser(
                 {
                     email: userName,
                     password: userPassword,
                 }
             )
-         logger.log("login res==>", res)
-         
+            logger.log("login res==>", res)
+
             if (res?.token) {
-               //  login(res.token, res.user, res.outlet);
-               // const hasPermission = await checkNotificationPermission()
-               // const hasLocationPermission = await checkLocationPermission()
-                
-//                 if (!hasPermission || !hasLocationPermission) {
-//     setShowPermission(true);
-
-//     pendingToken.current = res.token;
-//     pendingUser.current = res.user;
-//     pendingOutlet.current = res.outlet;
-// }
-
-// Login immediately
-login(res.token, res.user, res.outlet);
+              
+                login(res.token, res.user, res.outlet);
 
             }
 
@@ -84,9 +74,9 @@ login(res.token, res.user, res.outlet);
     };
 
     return (
-       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }} edges={['bottom']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }} edges={['bottom']}>
 
-  {/* <ScrollView
+            {/* <ScrollView
                 contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="handled"
                 removeClippedSubviews={false}
@@ -106,42 +96,42 @@ login(res.token, res.user, res.outlet);
                 />
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 10}
                     style={{ flex: 1, justifyContent: "flex-end" }}
                     enabled={Platform.OS === 'ios'}
                 >
-                    <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: hp(57), }]}>
+                    <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: CARD_HEIGHT, }]}>
                         <Text style={styles.welcomestyle}>Welcome Back!</Text>
                         <Text style={styles.headingStyle}>let’s make today a chill one</Text>
 
-                     <CustomTextInput
-    value={userName}
-    leftIcon={<Personsvg />}
-    placeholder='Enter User Name'
-    style={styles.textInputStyle}
-    label='Enter User Name'
-    onChangeText={setUserName}
-    returnKeyType="next"
-    blurOnSubmit={false}
-    onSubmitEditing={() => passwordRef.current?.focus()}
-/>
+                        <CustomTextInput
+                            value={userName}
+                            leftIcon={<Personsvg />}
+                            placeholder='Enter User Name'
+                            style={styles.textInputStyle}
+                            label='Enter User Name'
+                            onChangeText={setUserName}
+                            returnKeyType="next"
+                            blurOnSubmit={false}
+                            onSubmitEditing={() => passwordRef.current?.focus()}
+                        />
 
                         <CustomTextInput
-                           ref={passwordRef}
-                           value={userPassword}
+                            ref={passwordRef}
+                            value={userPassword}
                             leftIcon={<Locksvg />}
                             placeholder='Enter Password'
                             style={styles.textInputStyle}
                             label='Password'
-                             secureTextEntry={secure}
+                            secureTextEntry={secure}
                             rightIcon={
                                 <TouchableOpacity onPress={() => setSecure(!secure)}>
-                                     <Eyeclosesvg color={secure ? Colors.black : Colors.darkGray} />
+                                    <Eyeclosesvg color={secure ? Colors.black : Colors.darkGray} />
                                 </TouchableOpacity>
                             }
                             onChangeText={setUserPassword}
-                             returnKeyType="done"
-    onSubmitEditing={!isFormValid ? () => {} : handleLogin}
+                            returnKeyType="done"
+                            onSubmitEditing={!isFormValid ? () => { } : handleLogin}
                         />
                         <Text style={styles.forgotpassstyle} onPress={() => navigation.navigate('ForgotPassword')} >Forgot Password ?</Text>
                         <View style={{ justifyContent: 'space-between', gap: 10 }}>
@@ -155,12 +145,12 @@ login(res.token, res.user, res.outlet);
                         </View>
 
 
- <PermissionFlowModal
+                        <PermissionFlowModal
                             visible={showPermission}
                             onComplete={async () => {
                                 setShowPermission(false);
                                 if (pendingToken.current) {
-                                   login(pendingToken.current, pendingUser.current, pendingOutlet.current);
+                                    login(pendingToken.current, pendingUser.current, pendingOutlet.current);
                                     pendingToken.current = null;
                                     pendingUser.current = null;
                                     pendingOutlet.current = null;
@@ -171,7 +161,7 @@ login(res.token, res.user, res.outlet);
                     </GradientContainer>
                 </KeyboardAvoidingView>
             </View>
-{/* </ScrollView> */}
+            {/* </ScrollView> */}
         </SafeAreaView>
     );
 };

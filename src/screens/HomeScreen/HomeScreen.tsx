@@ -340,7 +340,7 @@ const modalHeightPercentage = itemCount <= 1 ? 0.52 : 0.60;
           <CustomButton
             title='Accept Order'
             style={styles.acceptButton}
-            loading={isAccepting}
+           // loading={isAccepting}
             onPress={onPressAccept}
           />
         </View>

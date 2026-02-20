@@ -94,7 +94,8 @@ import { setToken } from '../utils/token';
 import { logger } from '../utils/logger';
 import { LoaderContext } from '../context/LoaderContext';
 import { ForgotPasswordPayload, LoginPayload, SetNewPasswordPayload, VerfiyForgotPasswordOtp } from '../services/auth/auth.types';
-import { forgotPassword, login, LOGOUT, setNewPassword, verifyForgotPasswordOtp } from '../services/auth/auth.api';
+import { forgotPassword, login, LOGOUT, saveTokenToBackend, setNewPassword, verifyForgotPasswordOtp } from '../services/auth/auth.api';
+import messaging from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from './ToastProvider';
@@ -199,6 +200,10 @@ export const useAuth = () => {
       logger.log('logoutUser platform:', platform);
 
       const res = await LOGOUT({ device_token: token, platform });
+      if (res?.success) {
+        // 2️⃣ Delete FCM token locally (important)
+        await messaging().deleteToken();
+      }
       logger.log('logoutUser res:', res);
     } catch (error) {
       logger.error('logout error:', error);
@@ -208,6 +213,25 @@ export const useAuth = () => {
       hide();
     }
   };
+const saveToken = async (
+  token: string,
+  platform: 'ios' | 'android'
+) => {
+  try {
+    logger.log('saveToken token:', token);
+    logger.log('saveToken platform:', platform);
+
+    const response = await saveTokenToBackend({
+      device_token: token,
+      platform,
+    });
+
+    console.log('saveTokenToBackend response:', response);
+  } catch (error) {
+    console.log('Error saving token:', error);
+  }
+};
+
 
   return {
     loginUser,

@@ -20,6 +20,12 @@ export interface LogoutPayload {
   device_token: string;
   platform: 'ios' | 'android';
 }
+type RunnerPlatform = 'runner_ios' | 'runner_android';
+export interface SaveDeviceTokenPayload {
+  device_token: string;
+  platform: RunnerPlatform;
+}
+
 
 export interface AuthResponse {
   token: string;

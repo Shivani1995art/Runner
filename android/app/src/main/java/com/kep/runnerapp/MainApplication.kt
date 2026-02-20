@@ -1,4 +1,4 @@
-package com.runnerapp
+package com.kep.runnerapp
 
 import android.app.Application
 import com.facebook.react.PackageList

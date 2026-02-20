@@ -1,4 +1,4 @@
-package com.runnerapp
+package com.kep.runnerapp
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

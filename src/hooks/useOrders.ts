@@ -108,7 +108,7 @@ export const useOrders = () => {
       }
     } catch (e) {
       logger.log('toggleRunnerDuty error:', e);
-      toast((e as Error)?.message || 'Failed to update status', 'error', 3000);
+     // toast((e as Error)?.message || 'Failed to update status', 'error', 3000);
     } finally {
       setIsLoadingStatus(false);
     }
@@ -138,7 +138,7 @@ export const useOrders = () => {
       }
     } catch (e) {
       logger.log('acceptOrder error:', e);
-      toast((e as Error)?.message || 'Failed to accept order', 'error', 3000);
+      //toast((e as Error)?.message || 'Failed to accept order', 'error', 3000);
     } finally {
       hide();
       setIsAccepting(false);

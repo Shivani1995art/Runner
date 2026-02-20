@@ -11,10 +11,28 @@ import OrderHistory from '../../screens/OrderHistory/OrderHistory';
 import CustomerInfoScreen from '../../screens/Customer/CustomerInfoScreen';
 import HelpScreen from '../../screens/Profile/HelpScreen';
 import EditProfileScreen from '../../components/modals/EditProfileScreen';
-
+import useNotificationSetup from '../../hooks/useNotificationSetup';
+import { saveFCMToken } from '../../utils/token';
+import { useAppPermissions } from '../../hooks/useAppPermissions';
+import messaging from '@react-native-firebase/messaging';
 const Stack = createNativeStackNavigator();
+const checkPermission = async () => {
+  const authStatus = await messaging().hasPermission();
+  
+  const enabled =
+    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
+  if (enabled) {
+    console.log('Authorization status:', authStatus);
+    return true;
+  } else {
+    console.log('Permissions are NOT enabled');
+    return false;
+  }
+};
 const AppBootstrap = ({ navigation }) => {
+   const { checkNotificationPermission, checkLocationPermission } = useAppPermissions()
   useEffect(() => {
     const check = async () => {
       try {
@@ -42,6 +60,15 @@ const AppBootstrap = ({ navigation }) => {
 
     check();
   }, [navigation]);
+
+
+  // useNotificationSetup(true, async (token) => {
+  //   logger.log('MainScreenNavigation token:', token);
+  //    // const hasPermission = await checkPermission()
+  //    // if (hasPermission) {
+  //         await saveFCMToken(token);
+  //   //  }
+  //   });
 
   return <SplashScreen />;
 };

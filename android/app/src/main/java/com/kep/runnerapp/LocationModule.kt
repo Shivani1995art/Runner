@@ -1,4 +1,4 @@
-package com.runnerapp
+package com.kep.runnerapp
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location

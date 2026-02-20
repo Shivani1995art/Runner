@@ -1,4 +1,4 @@
-package com.runnerapp
+package com.kep.runnerapp
 import android.os.Bundle
 import com.swmansion.rnscreens.fragment.restoration.RNScreensFragmentFactory
 import com.facebook.react.ReactActivity

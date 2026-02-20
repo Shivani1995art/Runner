@@ -49,16 +49,19 @@ import { AuthContext } from '../context/AuthContext';
 import { logger } from '../utils/logger';
 import { useBootstrap } from '../hooks/useBootstrap';
 
+
 const Routes = () => {
     const { isLogin } = useContext(AuthContext);
     const { hasSeenOnboarding, isBootstrapping } = useBootstrap();
-    
+      
     // Minimum splash display time to avoid flicker
     const [minSplashDone, setMinSplashDone] = useState(false);
 
     logger.log('===hasSeenOnboarding=====', hasSeenOnboarding);
     logger.log('===isLogin=====', isLogin);
     logger.log('===isBootstrapping=====', isBootstrapping);
+
+
 
     useEffect(() => {
         const timer = setTimeout(() => {

@@ -20,8 +20,6 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to photo library to allow users to select profile images</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
@@ -35,27 +33,22 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-		<key>NSLocationWhenInUseUsageDescription</key>
+
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location to find nearby cabanas</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>We track your location while delivering to provide customers with accurate ETAs, even when the app is in the background.</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>Your location is used to provide accurate delivery tracking for customers.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photo library to allow users to select profile images</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>We use notifications to keep you updated</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>arm64</string>
-	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
-
 	<key>UIAppFonts</key>
 	<array>
 		<string>Inter_18pt-Bold.ttf</string>
@@ -74,5 +67,23 @@
 		<string>JosefinSans-Regular.ttf</string>
 		<string>JosefinSans-SemiBold.ttf</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>

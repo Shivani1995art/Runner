@@ -42,35 +42,67 @@ export const useAppPermissions = () => {
     const result = await check(permission);
     return result === RESULTS.GRANTED;
   };
+  // const requestNotificationPermission = async () => {
+  //   try {
+  //     if (Platform.OS === 'android' && Platform.Version < 33) {
+  //       // await enableNotification({ notification_enabled: true });
+  //       return true;
+  //     }
+
+  //     const { status } = await requestNotifications(['alert', 'sound', 'badge']);
+
+  //     if (status === RESULTS.GRANTED) {
+  //       //await enableNotification({ notification_enabled: true });
+  //       return true;
+  //     }
+
+  //     if (status === RESULTS.BLOCKED) {
+  //       Alert.alert(
+  //         'Permission Required',
+  //         'Please enable notifications from settings',
+  //         [{ text: 'Open Settings', onPress: () => openSettings(), }]
+  //       );
+  //     }
+
+  //     // await enableNotification({ notification_enabled: false });
+  //     return false;
+  //   } catch {
+  //     //  await enableNotification({ notification_enabled: false });
+  //     return false;
+  //   }
+  // };
+ 
   const requestNotificationPermission = async () => {
-    try {
-      if (Platform.OS === 'android' && Platform.Version < 33) {
-        // await enableNotification({ notification_enabled: true });
-        return true;
+  try {
+    if (Platform.OS === 'android') {
+      if (Platform.Version < 33) {
+        return true; // auto granted before Android 13
       }
 
       const { status } = await requestNotifications(['alert', 'sound', 'badge']);
-
-      if (status === RESULTS.GRANTED) {
-        //await enableNotification({ notification_enabled: true });
-        return true;
-      }
-
-      if (status === RESULTS.BLOCKED) {
-        Alert.alert(
-          'Permission Required',
-          'Please enable notifications from settings',
-          [{ text: 'Open Settings', onPress: () => openSettings(), }]
-        );
-      }
-
-      // await enableNotification({ notification_enabled: false });
-      return false;
-    } catch {
-      //  await enableNotification({ notification_enabled: false });
-      return false;
+      return status === RESULTS.GRANTED;
     }
-  };
+
+    // iOS
+    const { status } = await requestNotifications(['alert', 'sound', 'badge']);
+
+    if (status === RESULTS.BLOCKED) {
+      Alert.alert(
+        'Permission Required',
+        'Please enable notifications from settings',
+        [{ text: 'Open Settings', onPress: () => openSettings() }]
+      );
+    }
+
+    return status === RESULTS.GRANTED;
+
+  } catch (error) {
+    logger.log('Notification permission error:', error);
+    return false;
+  }
+};
+
+  
   const requestLocationPermission = async () => {
     try {
       const permission =

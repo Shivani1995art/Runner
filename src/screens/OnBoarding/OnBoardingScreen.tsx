@@ -39,15 +39,28 @@ const OnboardingScreen = ({ navigation }) => {
 
     const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
+// const handleNext = async () => {
+//     if (currentIndex < slides.length - 1) {
+//         slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
+//     } else {
+//         await AsyncStorage.setItem(ONBOARDING_KEY, DeviceInfo.getVersion());
+//         navigation.replace("Login");
+//     }
+// };
+    
 const handleNext = async () => {
+     console.log('version:', JSON.stringify(DeviceInfo.getVersion()));
+    console.log('key:', JSON.stringify(ONBOARDING_KEY));
     if (currentIndex < slides.length - 1) {
         slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
     } else {
-        await AsyncStorage.setItem(ONBOARDING_KEY, DeviceInfo.getVersion());
+        const version = DeviceInfo.getVersion() ?? '1.0.0'; // fallback if null
+        await AsyncStorage.setItem(ONBOARDING_KEY, version);
         navigation.replace("Login");
     }
 };
-    const handleSkip = () => {
+
+const handleSkip = () => {
         navigation.replace("Login");
     };
 

@@ -180,7 +180,7 @@ import React, {
   ReactNode,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { clearToken, setToken } from '../utils/token';
+import { clearFCMToken, clearToken, setToken } from '../utils/token';
 import { logger } from '../utils/logger';
 
 export interface User {
@@ -302,6 +302,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   const logout = async () => {
     logger.log('logout called==>');
     clearToken();
+    clearFCMToken();
     setUser(null);
     setOutlet(null);
     setIsLogin(false);

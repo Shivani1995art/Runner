@@ -18,6 +18,8 @@ export const useBootstrap = () => {
         AsyncStorage.getItem(ONBOARDING_KEY),
       ]);
       const currentVersion = DeviceInfo.getVersion();
+    
+      
       setHasSeenOnboarding(storedOnboardingVersion === currentVersion);
     } catch (e) {
       setHasSeenOnboarding(true);

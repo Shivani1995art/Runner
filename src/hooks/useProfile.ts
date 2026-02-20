@@ -264,7 +264,7 @@ export const useProfile = () => {
       return res;
     } catch (e) {
       logger.log('saveProfile error:', e);
-      toast((e as Error)?.message || 'Update failed', 'error', 3000);
+      //toast((e as Error)?.message || 'Update failed', 'error', 3000);
     } finally {
       hide();
       setIsUpdating(false);

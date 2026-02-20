@@ -7,7 +7,8 @@ import {
   LoginPayload,
   VerfiyForgotPasswordOtp,
   SetNewPasswordPayload,
-  LogoutPayload
+  LogoutPayload,
+  SaveDeviceTokenPayload
 } from './auth.types';
 
 /* LOGIN */
@@ -59,6 +60,16 @@ export const setNewPassword = async (
 export const LOGOUT = async (payload: LogoutPayload): Promise<AuthResponse> => {
   const { data } = await apiClient.post(
     ENDPOINTS.RUNNER_AUTH.LOGOUT,
+    payload   // send body here
+  );
+  return data;
+};
+
+
+/* saveTokenToBackend */
+export const saveTokenToBackend = async (payload: SaveDeviceTokenPayload): Promise<AuthResponse> => {
+  const { data } = await apiClient.post(
+    ENDPOINTS.RUNNER_AUTH.UPDATE_DEVICE,
     payload   // send body here
   );
   return data;
