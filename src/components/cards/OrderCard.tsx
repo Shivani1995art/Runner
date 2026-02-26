@@ -312,6 +312,7 @@ interface OrderCardProps {
   estimatedReadyAt?: string | null; // e.g. "2026-02-19T06:09:46.339Z"
   startedAt?: number;               // epoch ms fallback
   location: string;
+  orderID?: string | number;
   status?: 'preparing' | 'ready' | 'assigned' | 'picked' | 'delivered';
   onAccept?: () => void;
   rightText?: string;
@@ -329,6 +330,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   estimatedReadyAt,
   startedAt,
   location,
+  orderID,
   status = 'preparing',
   onAccept,
   rightText = '',
@@ -340,7 +342,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   locationUnderline = true,
 }) => {
   const clockColor = ClockColor || Colors.white;
-
+logger.log(orderID)
   // ── Calculate remaining seconds ─────────────────────────────────────────────
   const getInitialSeconds = (): number => {
     // Priority 1: use estimatedReadyAt ISO timestamp via moment (most accurate)
@@ -433,7 +435,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
       {!showOrderButton && (
         <View style={styles.modalHeader}>
           {rightText ? (
-            <Text style={styles.rightTextstyle}>{rightText}</Text>
+            <View style={{flexDirection:'column'}}>
+             
+                {/* <Text style={{color:Colors.black1}}>#{orderID}</Text> */}
+           
+              <Text style={styles.rightTextstyle}>#{orderID} {rightText}</Text>
+              </View>
+         
           ) : null}
           <View
             style={[
@@ -515,7 +523,7 @@ const styles = StyleSheet.create({
     gap: ms(6),
   },
   rightTextstyle: {
-    marginVertical: vs(16),
+    marginVertical: vs(8),
     fontSize: fontSize(16),
     color: Colors.black2,
     fontFamily: Typography.Bold.fontFamily,

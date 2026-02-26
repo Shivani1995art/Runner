@@ -19,67 +19,68 @@ const BottomGradientModal = ({
   visible,
   onClose,
   children,
-  
-  maxHeightPercentage = 0.85,     // ← increased flexibility
-  minHeightPercentage = 0.35,     // ← minimum sensible height
+  maxHeightPercentage = 0.75,
+  minHeightPercentage = 0.35,
 }) => {
-  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
+  const slideAnim = useRef(new Animated.Value(height)).current;
 
   useEffect(() => {
     if (visible) {
-      Animated.timing(slideAnim, {
-        toValue: 0,                    // slide from bottom → top:0
-        duration: 300,
-        useNativeDriver: true,         // better perf (translateY)
+      Animated.spring(slideAnim, {   // ← spring feels more natural
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 4,
       }).start();
     } else {
       Animated.timing(slideAnim, {
-        toValue: Dimensions.get('window').height,
+        toValue: height,
         duration: 280,
         useNativeDriver: true,
       }).start();
     }
   }, [visible]);
 
+  // ← recalculate height when maxHeightPercentage changes
+  const modalHeight = height * maxHeightPercentage;
+
   return (
     <Modal
       visible={visible}
       animationType="none"
-      transparent={true}
+      transparent
       statusBarTranslucent
       presentationStyle="overFullScreen"
     >
       {/* Backdrop */}
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={[
-    StyleSheet.absoluteFill, 
-    { backgroundColor: 'rgba(255, 255, 255, 0.7)' } // 70% opacity white
-  ]}>
-          {/* <BlurView style={StyleSheet.absoluteFill} blurType="dark" blurAmount={10} /> */}
-        </View>
+          StyleSheet.absoluteFill,
+          { backgroundColor: 'rgba(255, 255, 255, 0.7)' }
+        ]} />
       </TouchableWithoutFeedback>
 
-      {/* Sliding content */}
+      {/* Sliding content — height is now dynamic */}
       <Animated.View
         style={[
           styles.modalContainer,
           {
-            transform: [{ translateY: slideAnim }],
-            // maxHeight: Dimensions.get('window').height * maxHeightPercentage,
-            // minHeight: Dimensions.get('window').height * minHeightPercentage,
-            height: Dimensions.get('window').height * maxHeightPercentage
-
+             transform: [{ translateY: slideAnim }],
+      maxHeight: height * maxHeightPercentage,  // ← maxHeight not height
+      height: height * maxHeightPercentage,
+            // transform: [{ translateY: slideAnim }],
+            // height: modalHeight,  // ← uses dynamic height
           },
         ]}
       >
-     <GradientContainer
-  borderRadius={ms(40)}
-  style={[styles.gradientBox, { flex: 1 }]}   // ensure flex:1
->
-  <View style={{ flex: 1, }}>
-    {children}
-  </View>
-</GradientContainer>
+        <GradientContainer
+          borderRadius={ms(40)}
+         style={{ flex: 1 }}    
+          //  style={[styles.gradientBox, { flex: 1 }]}
+        >
+          <View style={{ flex: 1 }}>
+            {children}
+          </View>
+        </GradientContainer>
       </Animated.View>
     </Modal>
   );

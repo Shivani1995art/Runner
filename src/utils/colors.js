@@ -1,4 +1,5 @@
 const Colors = {
+  primary:"#FF8800",
     orange: "#FF8800",
     blue: "#3B63FE",
     darkGray: "#B0B0B0",
@@ -18,6 +19,7 @@ const Colors = {
     lightred:"#FF6767",
     red1:"#FF9393",
     red2:"#FB3838",
+    green1:"green",
     green2:"#06C270",
     green3:"#39D98A",
     blue1:"#93A9FF",
@@ -32,9 +34,8 @@ const Colors = {
     seagreen2:"#46C2BE",
     black2:"#172B4D",
     customerInfoCardBg:"#EBF3FF",
-    
-
-
+    error:"#FB3838",
+gray1:"#ffffff5e",
   };
   
   export default Colors;

@@ -73,7 +73,7 @@ export default CustomButton;
 const styles = StyleSheet.create({
   button: {
     width: wp(90),
-    paddingVertical: vs(15),
+    paddingVertical: vs(10),
     borderRadius: ms(10),
     justifyContent: 'center',
     alignItems: 'center',

@@ -48,12 +48,17 @@ export const useMapLocation = (
         logger.log('android loc =>', loc);
         if (loc?.latitude && loc?.longitude) {
           setRunnerCoords({ latitude: loc.latitude, longitude: loc.longitude });
+
         }
       } else {
         const loc = await fetchIOSLocation();
         logger.log('ios loc =>', loc);
         if (loc?.latitude && loc?.longitude) {
           setRunnerCoords({ latitude: loc.latitude, longitude: loc.longitude });
+//          setRunnerCoords({
+//   latitude: 30.736994,
+//   longitude: 76.665802,
+// });
         }
       }
     } catch (e) {

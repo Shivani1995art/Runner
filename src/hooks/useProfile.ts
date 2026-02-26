@@ -186,6 +186,8 @@ import { useToast } from './ToastProvider';
 import { getPerformance, getProfile, updateProfile } from '../services/Profile/profile.api';
 import { LoaderContext } from '../context/LoaderContext';
 import { AuthContext } from '../context/AuthContext';
+import { apiClient } from '../api/axios';
+import { ENDPOINTS } from '../api/endpoints';
 
 export const useProfile = () => {
   const { toast }       = useToast();
@@ -206,7 +208,7 @@ export const useProfile = () => {
       show();
       setIsLoadingProfile(true);
       const res = await getProfile();
-      logger.log('fetchProfile res:', res);
+     // logger.log('fetchProfile res:', res);
 
       if (res?.success) {
         setProfile(res.data);
@@ -244,32 +246,45 @@ export const useProfile = () => {
   // ── saveProfile ─────────────────────────────────────────────────────────────
   // res: { success, message, data: { updated runner } }
   // ─────────────────────────────────────────────────────────────────────────────
+
   const saveProfile = async (payload: {
     display_name?: string;
-    phone?:        string;
-    password?:     string;
-    image?:        { uri: string; name: string; type: string } | null;
+    phone?: string;
+    password?: string;
+    image?: { uri: string; name: string; type: string } | null;
   }) => {
     try {
-      show();
       setIsUpdating(true);
-      const res = await updateProfile(payload);
-      logger.log('saveProfile res:', res);
 
-      if (res?.success) {
-        setProfile(res.data);
-        await updateUser(res.data); // sync to AuthContext + AsyncStorage
-        toast(res?.message || 'Profile updated', 'success', 3000);
+      const formData = new FormData();
+
+      if (payload.display_name) formData.append('display_name', payload.display_name);
+      if (payload.phone)        formData.append('phone', payload.phone);
+      if (payload.password)     formData.append('password', payload.password);
+      if (payload.image) {
+        formData.append('image', {
+          uri:  payload.image.uri,
+          name: payload.image.name,
+          type: payload.image.type,
+        } as any);
       }
-      return res;
-    } catch (e) {
-      logger.log('saveProfile error:', e);
-      //toast((e as Error)?.message || 'Update failed', 'error', 3000);
+
+      const response = await apiClient.put(ENDPOINTS.RUNNER_AUTH.PROFILE, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      logger.log('saveProfile response:', response.data);
+      return { data: response.data, message: 'Profile updated successfully' };
+    } catch (error: any) {
+      logger.error('saveProfile error:', error);
+      return null;
     } finally {
-      hide();
       setIsUpdating(false);
     }
   };
+
+
+
 
   return {
     profile,

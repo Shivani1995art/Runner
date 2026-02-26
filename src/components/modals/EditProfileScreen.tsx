@@ -22,6 +22,9 @@ import { commonStyle } from '../../styles/CommonStyles';
 import CustomTextInput from '../inputs/CustomTextInput';
 import CommonModal from './CommonModal';
 import { useProfile } from '../../hooks/useProfile';
+import { apiClient } from '../../api/axios';
+import { ENDPOINTS } from '../../api/endpoints';
+import { LoaderContext } from '../../context/LoaderContext';
 
 interface EditProfileScreenProps {
   onUpdate?: (updatedData: any) => void;
@@ -29,6 +32,7 @@ interface EditProfileScreenProps {
 
 const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onUpdate }) => {
   const route = useRoute();
+    const { show, hide }  = useContext(LoaderContext);
   const navigation = useNavigation();
   const { userData } = route.params as { userData: any };
   const { saveProfile, isUpdating } = useProfile();
@@ -47,11 +51,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onUpdate }) => {
     profile_image: userData.profile_image || '',
   });
 
-  const [selectedImage, setSelectedImage] = useState<{
-    uri:  string;
-    name: string;
-    type: string;
-  } | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(userData.profile_image || null);
 
   const [alertModal, setAlertModal] = useState<{
     title:   string;
@@ -86,39 +86,133 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onUpdate }) => {
       quality:   0.8 as PhotoQuality,
     };
 
-    launchImageLibrary(options, (response: ImagePickerResponse) => {
-      if (response.didCancel) return;
+      launchImageLibrary(options, (response: ImagePickerResponse) => {
+      logger.log('Image picker response:', response);
 
-      if (response.errorMessage) {
-        setAlertModal({ title: 'Error', message: response.errorMessage, type: 'error' });
+      if (response.didCancel) {
+        logger.log('User cancelled image picker');
         return;
       }
 
-      if (response.assets?.[0]?.uri) {
-        const uri      = response.assets[0].uri!;
-        const fileType = uri.split('.').pop()?.toLowerCase() || 'jpg';
-        const mimeType = fileType === 'jpg' ? 'image/jpeg' : `image/${fileType}`;
+      if (response.errorMessage) {
+        logger.log('Image picker error:', response.errorMessage);
+        setAlertModal({
+          title: 'Error',
+          message: `Image picker error: ${response.errorMessage}`,
+          type: 'error'
+        });
+        return;
+      }
 
-        const validTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        if (!validTypes.includes(fileType)) {
-          setAlertModal({ title: 'Error', message: 'Invalid image format. Use JPG, PNG, GIF or WebP.', type: 'error' });
-          return;
+      if (response.assets && response.assets[0]) {
+        const imageUri = response.assets[0].uri;
+        logger.log('Selected image URI:', imageUri);
+
+        if (imageUri) {
+          setSelectedImage(imageUri);
+          setFormData(prev => ({ ...prev, profile_image: imageUri }));
+          logger.log('Image selected and state updated');
         }
-
-        setSelectedImage({ uri, name: `profile.${fileType}`, type: mimeType });
-        logger.log('Image selected:', uri);
+      } else {
+        logger.log('No assets in response');
+        setAlertModal({
+          title: 'Error',
+          message: 'No image selected',
+          type: 'error'
+        });
       }
     });
+//     launchImageLibrary(options, (response: ImagePickerResponse) => {
+//       if (response.didCancel) return;
+
+//       if (response.errorMessage) {
+//         setAlertModal({ title: 'Error', message: response.errorMessage, type: 'error' });
+//         return;
+//       }
+// logger.log('Image picker response:', response);
+//       if (response.assets?.[0]?.uri) {
+//         const uri      = response.assets[0].uri!;
+//         const fileType = uri.split('.').pop()?.toLowerCase() || 'jpg';
+//         const mimeType = fileType === 'jpg' ? 'image/jpeg' : `image/${fileType}`;
+
+//         const validTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+//         if (!validTypes.includes(fileType)) {
+//           setAlertModal({ title: 'Error', message: 'Invalid image format. Use JPG, PNG, GIF or WebP.', type: 'error' });
+//           return;
+//         }
+
+//         setSelectedImage({ uri, name: `profile.${fileType}`, type: mimeType });
+//         logger.log('Image selected:', uri);
+//       }
+//     });
   };
 
   // ── Submit ──────────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
+  // const handleSubmit = async () => {
+  //   if (!formData.display_name.trim()) {
+  //     setAlertModal({ title: 'Error', message: 'Name is required', type: 'error' });
+  //     return;
+  //   }
+
+  //   // Phone validation
+  //   if (formData.phone && formData.phone !== originalData.phone) {
+  //     const phoneRegex = /^[+]?[\d\s\-\(\)]+$/;
+  //     if (!phoneRegex.test(formData.phone)) {
+  //       setAlertModal({ title: 'Error', message: 'Please enter a valid phone number', type: 'error' });
+  //       return;
+  //     }
+  //   }
+
+  //   // Password validation
+  //   if (formData.password.trim() && formData.password.length < 6) {
+  //     setAlertModal({ title: 'Error', message: 'Password must be at least 6 characters', type: 'error' });
+  //     return;
+  //   }
+
+  //   // Build payload — only changed fields
+  //   // Matches: { display_name, phone, password, image: { uri, name, type } }
+  //   const hasNameChange     = formData.display_name.trim() !== originalData.display_name;
+  //   const hasPhoneChange    = formData.phone !== originalData.phone;
+  //   const hasPasswordChange = !!formData.password.trim();
+  //   const hasImageChange    = !!selectedImage;
+
+  //   if (!hasNameChange && !hasPhoneChange && !hasPasswordChange && !hasImageChange) {
+  //     setAlertModal({ title: 'Info', message: 'No changes to update', type: 'info' });
+  //     return;
+  //   }
+
+  //   const payload: {
+  //     display_name?: string;
+  //     phone?:        string;
+  //     password?:     string;
+  //     image?:        { uri: string; name: string; type: string } | null;
+  //   } = {};
+
+  //   if (hasNameChange)     payload.display_name = formData.display_name.trim();
+  //   if (hasPhoneChange)    payload.phone         = formData.phone;
+  //   if (hasPasswordChange) payload.password      = formData.password.trim();
+  //   if (hasImageChange)    payload.image         = selectedImage;
+
+  //   logger.log('saveProfile payload:', payload);
+
+  //   const res = await saveProfile(payload);
+  //  logger.log('=====saveProfile res:>', res);
+  //   if (res?.data.success) {
+  //     if (onUpdate && res?.data) onUpdate(res.data);
+  //     setAlertModal({ title: 'Success', message: res?.message || 'Profile updated successfully', type: 'success' });
+  //     setTimeout(() => navigation.goBack(), 1500);
+  //   }
+  // };
+
+// Inside your useProfile hook or API service
+const handleSubmit = async () => {
+  try {
+    // 1. Validations
     if (!formData.display_name.trim()) {
       setAlertModal({ title: 'Error', message: 'Name is required', type: 'error' });
       return;
     }
 
-    // Phone validation
     if (formData.phone && formData.phone !== originalData.phone) {
       const phoneRegex = /^[+]?[\d\s\-\(\)]+$/;
       if (!phoneRegex.test(formData.phone)) {
@@ -127,46 +221,100 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onUpdate }) => {
       }
     }
 
-    // Password validation
     if (formData.password.trim() && formData.password.length < 6) {
       setAlertModal({ title: 'Error', message: 'Password must be at least 6 characters', type: 'error' });
       return;
     }
 
-    // Build payload — only changed fields
-    // Matches: { display_name, phone, password, image: { uri, name, type } }
-    const hasNameChange     = formData.display_name.trim() !== originalData.display_name;
-    const hasPhoneChange    = formData.phone !== originalData.phone;
-    const hasPasswordChange = !!formData.password.trim();
-    const hasImageChange    = !!selectedImage;
+    show(); // Show loader
 
-    if (!hasNameChange && !hasPhoneChange && !hasPasswordChange && !hasImageChange) {
-      setAlertModal({ title: 'Info', message: 'No changes to update', type: 'info' });
+    // 2. Create Multipart Data
+    const uploadData = new FormData();
+    let hasChanges = false;
+
+    if (formData.display_name.trim() !== originalData.display_name) {
+      uploadData.append('display_name', formData.display_name.trim());
+      hasChanges = true;
+    }
+    
+    if (formData.phone !== originalData.phone) {
+      uploadData.append('phone', formData.phone);
+      hasChanges = true;
+    }
+
+    if (formData.password.trim()) {
+      uploadData.append('password', formData.password.trim());
+      hasChanges = true;
+    }
+
+    // 3. Handle Image
+    if (selectedImage && selectedImage !== originalData.profile_image) {
+      if (typeof selectedImage === 'string' && (selectedImage.startsWith('file://') || selectedImage.startsWith('content://'))) {
+        const uri = selectedImage;
+        const fileType = uri.split('.').pop()?.toLowerCase() || 'jpg';
+        const validImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+        if (validImageTypes.includes(fileType)) {
+          uploadData.append('image', {
+            uri: uri,
+            type: fileType === 'jpg' ? 'image/jpeg' : `image/${fileType}`,
+            name: `profile.${fileType}`,
+          } as any);
+          hasChanges = true;
+        } else {
+          setAlertModal({ title: 'Error', message: 'Invalid image format.', type: 'error' });
+          hide();
+          return;
+        }
+      } else if (typeof selectedImage === 'string') {
+        uploadData.append('image', selectedImage);
+        hasChanges = true;
+      }
+    }
+
+    if (!hasChanges) {
+      setAlertModal({ title: 'Info', message: 'No changes detected.', type: 'info' });
+      hide();
       return;
     }
 
-    const payload: {
-      display_name?: string;
-      phone?:        string;
-      password?:     string;
-      image?:        { uri: string; name: string; type: string } | null;
-    } = {};
+    // 4. API Call - FIXED FOR ANDROID
+    const response = await apiClient.put('/api/runner/auth/profile', uploadData, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'multipart/form-data',
+      },
+      // THIS IS THE CRITICAL FIX:
+      // Prevent Axios from converting FormData into a plain object
+      transformRequest: (data) => {
+        return data; 
+      },
+    });
 
-    if (hasNameChange)     payload.display_name = formData.display_name.trim();
-    if (hasPhoneChange)    payload.phone         = formData.phone;
-    if (hasPasswordChange) payload.password      = formData.password.trim();
-    if (hasImageChange)    payload.image         = selectedImage;
+    logger.log('Profile update response:', response.data);
 
-    logger.log('saveProfile payload:', payload);
-
-    const res = await saveProfile(payload);
-   logger.log('=====saveProfile res:>', res);
-    if (res?.success) {
-      if (onUpdate && res?.data) onUpdate(res.data);
-      setAlertModal({ title: 'Success', message: res?.message || 'Profile updated successfully', type: 'success' });
+    if (response?.data?.success || response?.status === 200) {
+      if (onUpdate && response?.data) {
+        onUpdate(response.data);
+      }
+      setAlertModal({ 
+        title: 'Success', 
+        message: response?.data?.message || 'Profile updated successfully', 
+        type: 'success' 
+      });
       setTimeout(() => navigation.goBack(), 1500);
     }
-  };
+  } catch (error: any) {
+    logger.error('Update Profile Error:', error);
+    setAlertModal({ 
+      title: 'Error', 
+      message: error.response?.data?.message || 'Network error. Please check your connection.', 
+      type: 'error' 
+    });
+  } finally {
+    hide();
+  }
+};
 
   // ── Reset / Back ────────────────────────────────────────────────────────────
   const handleClose = () => {

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>RunnerApp</string>
+	<string>Runner</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,6 +24,8 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -34,15 +36,18 @@
 		<true/>
 	</dict>
 
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>mailto</string>
+	</array>
 
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We track your location while delivering to provide customers with accurate ETAs, even when the app is in the background.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Your location is used to provide accurate delivery tracking for customers.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location to find nearby cabanas</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-<string>We track your location while delivering to provide customers with accurate ETAs, even when the app is in the background.</string>
-<key>NSLocationAlwaysUsageDescription</key>
-<string>Your location is used to provide accurate delivery tracking for customers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to photo library to allow users to select profile images</string>
 	<key>NSUserTrackingUsageDescription</key>
@@ -70,6 +75,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>fetch</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -80,8 +86,12 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>

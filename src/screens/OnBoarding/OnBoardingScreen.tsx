@@ -60,7 +60,9 @@ const handleNext = async () => {
     }
 };
 
-const handleSkip = () => {
+const handleSkip = async () => {
+     const version = DeviceInfo.getVersion() ?? '1.0.0'; // fallback if null
+        await AsyncStorage.setItem(ONBOARDING_KEY, version);
         navigation.replace("Login");
     };
 

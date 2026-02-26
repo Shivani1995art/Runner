@@ -82,9 +82,9 @@ apiClient.interceptors.request.use(
     // sets multipart/form-data with the correct boundary automatically.
     // For everything else, keep application/json as default.
     // ───────────────────────────────────────────────────────────────────────
-    if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
-    }
+    // if (config.data instanceof FormData) {
+    //   delete config.headers['Content-Type'];
+    // }
 
     logger.log("Request Config:", config);
     return config;
@@ -116,6 +116,7 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    logger.log("Response Error:", error);
     handleApiError(error);
 
     // Optional: handle 401 globally here (e.g., logout)

@@ -1,4 +1,4 @@
-    import { StyleSheet, Text, TouchableOpacity, View, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+    import { StyleSheet, Text, TouchableOpacity, View, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
     import React, {useContext, useRef, useState } from 'react';
     import GradientContainer from '../../components/Gradient/GradientContainer';
     import { vs, ms, s, wp, hp, fontSize } from '../../utils/responsive';
@@ -18,7 +18,8 @@
     import { STRINGS } from '../../constants/string';
     import { LoaderContext } from '../../context/LoaderContext';
     import { commonStyle } from '../../styles/CommonStyles';
-
+    const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
     const ForgotPasswordScreen = ({ navigation, route }) => {
       
         const { fromOtp = false, email = '', reset_token = '' } = route.params || {};
@@ -167,7 +168,7 @@
                             title='cancel'
                             style={styles.backButtonStyle}
                         />
-                         <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: hp(54), }]}>
+                         <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: CARD_HEIGHT, }]}>
                             <Text style={styles.welcomestyle}>{!fromOtp ? "Forgot Password" : "Set a new password!"}</Text>
                             <Text style={commonStyle.headingStyle}>
                                 {!fromOtp

@@ -378,7 +378,7 @@ import { getToken } from '../../utils/token';
 import { useProfile } from '../../hooks/useProfile';
 import { commonStyle } from '../../styles/CommonStyles';
 import { useFocusEffect } from '@react-navigation/native';
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type ConfirmModalConfig = {
   title: string;
   message: string;
@@ -387,6 +387,10 @@ type ConfirmModalConfig = {
 };
 
 const ProfileScreen = ({ navigation }) => {
+
+  // Inside your component:
+const insets = useSafeAreaInsets();
+
   const { user } = useContext(AuthContext);
   const { logoutUser } = useAuth();
   const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig | null>(null);
@@ -433,7 +437,10 @@ const profileItems = [
   const handleLogout = async () => {
     const token = await getToken();
     logger.log('==token==', token);
-    await logoutUser(token || '', Platform.OS as 'ios' | 'android');
+   await logoutUser(
+  token || '',
+  Platform.OS === 'android' ? 'runner_android' : 'runner_ios'
+);
     setConfirmModal(null);
   };
 
@@ -544,12 +551,13 @@ const profileItems = [
 
         <View style={{ height: hp(15) }} />
       </ScrollView>
-
+<View style={{ bottom: insets.bottom }}>
       <CustomButton
         title="Logout"
         style={styles.logoutButton}
         onPress={openLogoutModal}
       />
+      </View>
     </View>
   );
 };

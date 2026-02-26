@@ -26,5 +26,9 @@ export const ENDPOINTS = {
 
   RUNNER_LOCATION: {
     UPDATE: '/api/runner/location/update',
-  }
+  },
+RUNNER_CHAT: {
+  SEND_MESSAGE: '/api/runner/notifications/send-notification',
+},
+
 };

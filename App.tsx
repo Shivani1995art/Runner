@@ -9,7 +9,15 @@ import Toast from 'react-native-toast-message'
 import { LoaderProvider } from './src/context/LoaderContext'
 import { NetworkProvider } from './src/context/NetworkProvider'
 import { ToastProvider } from './src/hooks/ToastProvider'
+import { KeyboardProvider } from 'react-native-keyboard-controller';
+
 const App = () => {
+
+  // Enable debug logging
+// if (__DEV__) {
+//   database().setLogLevel('debug');
+// }
+
   return (
     <GestureHandlerRootView style={styles.AppContainer}>
       <StatusBar barStyle="dark-content"
@@ -20,7 +28,10 @@ const App = () => {
         <AuthProvider>
           <LoaderProvider>
              <ToastProvider>
-  <Routes />
+              <KeyboardProvider>
+    <Routes />
+</KeyboardProvider>
+ 
             <Toast />
              </ToastProvider>
           

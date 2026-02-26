@@ -1,100 +1,76 @@
-# # Resolve react_native_pods.rb with node to allow for hoisting
+# Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
     "react-native/scripts/react_native_pods.rb",
     {paths: [process.argv[1]]},
   )', __dir__]).strip
+ 
+require_relative '../node_modules/react-native-permissions/scripts/setup'    #add for notifcation and location permison
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
+ 
+# 👇 Setup only required permissions
+setup_permissions([
+  'Notifications',
+  'LocationWhenInUse',
+  'LocationAlways',
+  'LocationAccuracy'
+])
+
+
 
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
   use_frameworks! :linkage => linkage.to_sym
 end
-
+ 
+rn_maps_path = '../node_modules/react-native-maps'
+ 
+pre_install do |installer|
+  installer.pod_targets.each do |pod|
+    if pod.name == 'RCTSwiftUI-library'
+      def pod.build_type
+        Pod::BuildType.static_library
+      end
+    end
+  end
+end
+ 
 target 'RunnerApp' do
   config = use_native_modules!
- use_frameworks! :linkage => :static
+  use_frameworks! :linkage => :static
   $RNFirebaseAsStaticFramework = true
-  
+ 
+  pod 'react-native-maps/Google', :path => rn_maps_path
+ 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
-
+ 
   post_install do |installer|
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
     )
+ 
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |cfg|
+        cfg.build_settings['SWIFT_VERSION'] = '5.0'
+        cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+      end
+    end
+ 
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.user_project.targets.each do |target|
+        target.build_configurations.each do |cfg|
+          cfg.build_settings['SWIFT_VERSION'] = '5.0'
+        end
+      end
+      aggregate_target.user_project.save
+    end
   end
 end
-# def node_require(script)
-#   require Pod::Executable.execute_command('node', ['-p',
-#     "require.resolve(
-#       '#{script}',
-#       {paths: [process.argv[1]]},
-#     )", __dir__]).strip
-# end
-
-# node_require('react-native/scripts/react_native_pods.rb')
-# node_require('react-native-permissions/scripts/setup.rb')
-
-# platform :ios, min_ios_version_supported
-# prepare_react_native_project!
-
-
-# setup_permissions([
-#   'Notifications',
-#   'LocationAccuracy',
-#   'LocationAlways',
-#   'LocationWhenInUse',
-# ])
-
-
-# # setup_permissions([
-# #   'LocationAccuracy',
-# #   'LocationAlways',
-# #   'LocationWhenInUse',
-# #   'Notifications',
-# # ])
-
-# linkage = ENV['USE_FRAMEWORKS']
-# if linkage != nil
-#   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-#   use_frameworks! :linkage => linkage.to_sym
-# end
-
-# target 'RunnerApp' do
-# # 1. Standard React Native setup
-#   config = use_native_modules!
-#   use_react_native!(
-#     :path => config[:reactNativePath],
-#     :hermes_enabled => true
-#   )
-
-#   # 2. Add ONLY these lines for Google Maps
-#   pod 'GoogleMaps'
-#   pod 'Google-Maps-iOS-Utils'
-
-#   use_frameworks! :linkage => :static
-#   $RNFirebaseAsStaticFramework = true
-
-#   use_react_native!(
-#     :path => config[:reactNativePath],
-#     :app_path => "#{Pod::Config.instance.installation_root}/.."
-#   )
-
-#   post_install do |installer|
-#     react_native_post_install(
-#       installer,
-#       config[:reactNativePath],
-#       :mac_catalyst_enabled => false,
-#     )
-#   end
-# end

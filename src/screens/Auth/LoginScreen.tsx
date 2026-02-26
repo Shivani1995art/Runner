@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform, StatusBar, Keyboard, Dimensions } from 'react-native';
-import React, { useContext, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform, StatusBar, Keyboard, Dimensions, LayoutAnimation } from 'react-native';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import GradientContainer from '../../components/Gradient/GradientContainer';
 import { vs, ms, s, wp, hp, fontSize } from '../../utils/responsive';
 import CustomButton from '../../components/Buttons/CustomButton';
@@ -18,8 +18,9 @@ import { AuthContext } from '../../context/AuthContext';
 import Toast from 'react-native-toast-message';
 import { useAppPermissions } from '../../hooks/useAppPermissions';
 import PermissionFlowModal from '../../components/modals/PermissionFlowModal';
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.65;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.58;
 const LoginScreen = ({ navigation }) => {
     const [showrestroui, setShowrestroui] = useState(false);
     const passwordRef = useRef(null);
@@ -37,6 +38,8 @@ const LoginScreen = ({ navigation }) => {
     const { login } = useContext(AuthContext);
     const { show, hide } = useContext(LoaderContext);
     const isFormValid = userName.trim().length > 0 && userPassword.trim().length > 0;
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    
     // const handleLogin = async () => {
     //     show
     //     const token = "dummyToken";
@@ -46,6 +49,27 @@ const LoginScreen = ({ navigation }) => {
     //    // login(token, userData);
     // };
 
+    useEffect(() => {
+  const showEvent =
+    Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow';
+  const hideEvent =
+    Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide';
+
+  const showSub = Keyboard.addListener(showEvent, (e) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setKeyboardHeight(100); // you can adjust 100 if needed
+  });
+
+  const hideSub = Keyboard.addListener(hideEvent, () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setKeyboardHeight(0);
+  });
+
+  return () => {
+    showSub.remove();
+    hideSub.remove();
+  };
+}, []);
 
     const handleLogin = async () => {
         logger.log("called===>")
@@ -54,8 +78,8 @@ const LoginScreen = ({ navigation }) => {
             //  show()
             const res = await loginUser(
                 {
-                    email: userName,
-                    password: userPassword,
+                    email: userName.trim(),
+                    password: userPassword.trim(),
                 }
             )
             logger.log("login res==>", res)
@@ -76,31 +100,39 @@ const LoginScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }} edges={['bottom']}>
 
-            {/* <ScrollView
+            <ScrollView
                 contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="handled"
                 removeClippedSubviews={false}
                 automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-            > */}
+            >
 
-            <StatusBar
-                barStyle="dark-content"
-                backgroundColor="transparent"
-                translucent
-            />
+          <StatusBar
+                    barStyle="dark-content"
+                    backgroundColor="transparent"
+                    translucent
+                />
             <View style={{ flex: 1 }}>
                 <Image
                     source={require('../../assets/images/login.webp')}
                     resizeMode="cover"
                     style={styles.bgImageStyle}
                 />
-                <KeyboardAvoidingView
+                {/* <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 10}
                     style={{ flex: 1, justifyContent: "flex-end" }}
                     enabled={Platform.OS === 'ios'}
-                >
-                    <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: CARD_HEIGHT, }]}>
+                > */}
+
+                 <View
+  style={{
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: Platform.OS === 'android' ? 0 : 0,
+  }}
+>
+                     <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: hp(62), }]}>
                         <Text style={styles.welcomestyle}>Welcome Back!</Text>
                         <Text style={styles.headingStyle}>let’s make today a chill one</Text>
 
@@ -131,7 +163,7 @@ const LoginScreen = ({ navigation }) => {
                             }
                             onChangeText={setUserPassword}
                             returnKeyType="done"
-                            onSubmitEditing={!isFormValid ? () => { } : handleLogin}
+                            onSubmitEditing={!isFormValid ? () => { } : Keyboard.dismiss}
                         />
                         <Text style={styles.forgotpassstyle} onPress={() => navigation.navigate('ForgotPassword')} >Forgot Password ?</Text>
                         <View style={{ justifyContent: 'space-between', gap: 10 }}>
@@ -159,9 +191,10 @@ const LoginScreen = ({ navigation }) => {
                         />
 
                     </GradientContainer>
-                </KeyboardAvoidingView>
+                    </View>
+                {/* </KeyboardAvoidingView> */}
             </View>
-            {/* </ScrollView> */}
+            </ScrollView>
         </SafeAreaView>
     );
 };

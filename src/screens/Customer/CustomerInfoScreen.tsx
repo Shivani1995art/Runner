@@ -1,11 +1,26 @@
-// import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
+
+
+// import React, {
+//   useEffect,
+//   useState,
+//   useContext,
+//   useRef,
+//   useCallback,
+//   } from 'react';
 // import {
-//   FlatList, ScrollView,
-//   StyleSheet, Text, View, ActivityIndicator,
+//   ScrollView,
+//   StyleSheet,
+//   Text,
+//   View,
+//   ActivityIndicator,
 //   Image,
 //   Linking,
 //   BackHandler,
+//   Alert,
+//   Platform,
 // } from 'react-native';
+// import { useFocusEffect } from '@react-navigation/native';
+
 // import CustomerInfoCard from '../../components/cards/CustmerInfoCard';
 // import InfoRow from '../../components/Row/InfoRow';
 // import Colors from '../../utils/colors';
@@ -17,6 +32,7 @@
 // import SuccessModal from '../../components/modals/SuccessModal';
 // import Greenticksvg from '../../assets/svg/Greenticksvg';
 // import RenderItem from '../../components/RenderItem/RenderItem';
+
 // import { useOrderDetail } from '../../hooks/useOrderDetail';
 // import { pickedOrder } from '../../services/Orders/order.api';
 // import { logger } from '../../utils/logger';
@@ -24,161 +40,196 @@
 // import MapViewComponent from '../../components/Map/MapViewComponent';
 // import { AuthContext } from '../../context/AuthContext';
 // import { useToast } from '../../hooks/ToastProvider';
-// import { useFocusEffect } from '@react-navigation/native';
+// import LocationService from '../../hooks/LocationModule.android'
+// import { useUserLocation } from '../../hooks/useUserLocation';
+// import OutletInfoCard from '../../components/cards/OutletInfoCard';
+// // ── Helper: safely parse a coordinate value ───────────────────────────────────
+// const safeCoord = (val: any): number | null => {
+//   const n = parseFloat(val);
+//   return isNaN(n) || n === 0 ? null : n;
+// };
 
-// const CustomerInfoScreen = ({ navigation, route }) => {
-//   const [showSlideModal, setShowSlideModal]     = useState(true);
+// // ── CustomerInfoScreen ────────────────────────────────────────────────────────
+// const CustomerInfoScreen = ({ navigation, route }: any) => {
+//   const [showSlideModal, setShowSlideModal] = useState(true);
 //   const [showSuccessModal, setShowSuccessModal] = useState(false);
-//   const [isPickingUp, setIsPickingUp]           = useState(false);
-//   const [isDelivering, setIsDelivering]         = useState(false);
-//   const { order, setOrder, isLoading, fetchOrderDetail, deliverOrder } = useOrderDetail();
+//   const [showPermission, setShowPermission] = useState(false);
+//   const [isPickingUp, setIsPickingUp] = useState(false);
+//   const [isDelivering, setIsDelivering] = useState(false);
+//   const [isDelivered, setIsDelivered] = useState(false);
+// const [isNavigatingAway, setIsNavigatingAway] = useState(false);
+//   const { order, setOrder, fetchOrderDetail, deliverOrder } = useOrderDetail();
 //   const { user } = useContext(AuthContext) || {};
 //   const { toast } = useToast();
-//   // ── Run-once guard — prevents re-fetching when order/status changes cause re-renders ──
+//  const { location: iosLocation, loading: iosLocationLoading, refetch: fetchIOSLocation } = useUserLocation();
+
 //   const hasFetchedRef = useRef(false);
 
 
-// // ── 1. Disable Back Button ───────────────────────────
-// // useFocusEffect(
-// //   useCallback(() => {
-// //     const onBackPress = () => true;
-// //     BackHandler.addEventListener('hardwareBackPress', onBackPress);
-// //     return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-// //   }, []) // This is okay, but ensure navigation.setOptions is handled carefully
-// // );
-// // Also disable back gesture/header button via navigation options
-//   useEffect(() => {
-//     navigation.setOptions({
-//       gestureEnabled: false,
-//     });
-//   }, [navigation]);
-//   // ── Order status ───────────────────────────────
-//   logger.log('orderStatus', order?.status);
-//   const orderStatus = order?.status ?? 'picked_up';
+//   const fetchLocation = async (): Promise<{ latitude: number; longitude: number } | null> => {
+//     try {
+//       if (Platform.OS === 'android') {
+        
+//         const data = await LocationService.getCurrentLocation();
+//         return { latitude: data.latitude, longitude: data.longitude };
+//       }else{
+//          // iOS — request permission first, then get location
+         
+//       return await fetchIOSLocation();
+//       }
+//       // iOS — useUserLocation.refetch() handles permission internally
+//      // return await fetchIOSLocation();
+//     } catch (err) {
+//       logger.error('fetchLocation error:', err);
+//       return null;
+//     }
+//   };
+
+//   // ── Derived order values ──────────────────────────────────────────────────
+//   const orderStatus = order?.status ?? 'assigned';
 //   const isPickedUp  = orderStatus === 'picked_up';
 
-//   // ── Outlet ─────────────────────────────────────
-//   const outletName    = order?.Outlet?.name         ?? '';
-//   const outletAddress = order?.Outlet?.address      ?? '';
-//   const outletLat     = order?.Outlet?.location_lat ?? null;
-//   const outletLng     = order?.Outlet?.location_lng ?? null;
+//   const outletName    = order?.Outlet?.name    ?? '';
+//   const outletAddress = order?.Outlet?.address ?? '';
 
-//   // ── Customer ────────────────────────────────────
-//   const customerName  = order?.User?.display_name   ?? 'Customer';
-//   const customerPhone = order?.User?.phone          ?? '';
-//   const customerImage = order?.User?.image_url      ??
+//   // Always parse to number — API may return strings
+//   const outletLat  = safeCoord(order?.Outlet?.location_lat);
+//   const outletLng  = safeCoord(order?.Outlet?.location_lng);
+//   const deliveryLat = safeCoord(order?.delivery_lat);
+//   const deliveryLng = safeCoord(order?.delivery_lng);
+
+//   const customerName  = order?.User?.display_name ?? 'Customer';
+//   const customerPhone = order?.User?.phone        ?? '';
+//   const customerImage =
+//     order?.User?.image_url ??
 //     'https://randomuser.me/api/portraits/women/44.jpg';
-//   const userId        = order?.User?.id             ?? '—';
+//   const userId = order?.User?.id ?? '—';
 
-//   // ── Order ───────────────────────────────────────
-//   const orderId      = order?.id                    ?? '—';
-//   const customerNote = order?.customer_note         ?? 'No special instructions';
-//   const orderLines   = order?.OrderLines            ?? [];
+//   const orderId      = order?.id            ?? '—';
+//   const customerNote = order?.customer_note ?? 'No special instructions';
+//   const orderLines   = order?.OrderLines    ?? [];
 //   const totalCents   = parseInt(order?.total_cents ?? '0', 10);
-//   const currency     = order?.currency              ?? 'USD';
+//   const currency     = order?.currency      ?? 'USD';
 
-//   // ── Delivery ────────────────────────────────────
- 
-//   const deliveryLocation = order?.delivery_text     ||
-//                            outletAddress            ||
-//                            'Resort pickup';
-// // At the top of your component
-// const deliveryLat = parseFloat(order?.delivery_lat);
-// const deliveryLng = parseFloat(order?.delivery_lng);
-// const outletLatNum = parseFloat(order?.Outlet?.location_lat);
-// const outletLngNum = parseFloat(order?.Outlet?.location_lng);
-// // ── Target coords based on status ─────────────
-// const targetLat = isPickedUp ? (deliveryLat || outletLatNum || 0) : (outletLatNum || 0);
-// const targetLng = isPickedUp ? (deliveryLng || outletLngNum || 0) : (outletLngNum || 0);
-// logger.log('targetLat', targetLat);
-// logger.log('targetLng', targetLng);
+//   const deliveryLocation =
+//     order?.delivery_text || outletAddress || 'Resort pickup';
 
-// // ✅ Pass targets directly — hook reacts to changes
-// const {
-//   runnerCoords,
-//   routeCoords,
-//   isLoadingLocation,
-//   isRouteLoading,
-//   fetchRunnerLocation,
-//   fetchRoute,
-//   mapRegion,
-//   distance,
-// } = useMapLocation(targetLat, targetLng);
+//   // Target switches between outlet (before pickup) and customer (after pickup)
+//   const targetLat = isPickedUp ? deliveryLat : outletLat;
+//   const targetLng = isPickedUp ? deliveryLng : outletLng;
 
-// // ── Stable ref to latest runnerCoords so fetchRoute effect doesn't loop ──
-// const runnerCoordsRef = useRef(runnerCoords);
-// useEffect(() => { runnerCoordsRef.current = runnerCoords; }, [runnerCoords]);
+//   // ── Map hook ──────────────────────────────────────────────────────────────
+//   const {
+//     runnerCoords,
+//     routeCoords,
+//     isLoadingLocation,
+//     isRouteLoading,
+//     fetchRunnerLocation,
+//     fetchRoute,
+//     mapRegion,
+//     distance,
+//   } = useMapLocation(targetLat, targetLng);
 
-// // Fetch route once coords + target are ready.
-// // Deps: only targetLat/targetLng — so route re-fetches when destination changes
-// // (e.g. picked_up → delivery coords) but NOT on every runnerCoords GPS tick.
-// useEffect(() => {
-//   logger.log('useEffect run ')
-//   if (runnerCoordsRef.current && targetLat && targetLng) {
-//     fetchRoute(targetLat, targetLng);
-//   }
-// // eslint-disable-next-line react-hooks/exhaustive-deps
-// }, [targetLat, targetLng]); // ← intentional: fetchRoute omitted to break the loop
-
-//   // useEffect(() => {
-//   //   const intervalId = setInterval(() => {
-//   //     fetchRunnerLocation();
-//   //   }, 5000);
-
-//   //   return () => {
-//   //     clearInterval(intervalId);
-//   //   };
-//   // }, [fetchRunnerLocation]);
-
-// logger.log('mapRegion', mapRegion);
-// logger.log('runnerCoords', runnerCoords);
-// logger.log('distance', distance);
-// logger.log('isLoadingLocation', isLoadingLocation);
-// logger.log('outletName', outletName);
+//   const runnerCoordsRef = useRef(runnerCoords);
 //   useEffect(() => {
-//     // Guard: only run once on mount — order/status changes must NOT re-trigger this
+//     runnerCoordsRef.current = runnerCoords;
+//   }, [runnerCoords]);
+
+//   // Re-fetch route when destination changes (pickup → delivery)
+//   useEffect(() => {
+//     if (runnerCoordsRef.current && targetLat && targetLng) {
+//       fetchRoute(targetLat, targetLng);
+//     }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [targetLat, targetLng,isDelivered]);
+
+//   // ── Mount: check location then load order ────────────────────────────────
+// const loadOrder = useCallback(async () => {
+//   // ✅ Don't reload if already delivered
+//   if (isDelivered) return;
+
+//   const routeOrder = route?.params?.order;
+//   if (routeOrder?.OrderLines) {
+//     setOrder(routeOrder);
+//   } else {
+//     const newOrderId = routeOrder?.order?.id ?? routeOrder?.id;
+//     fetchOrderDetail(newOrderId ? Number(newOrderId) : undefined);
+//   }
+//   fetchRunnerLocation();
+// }, [route?.params?.order, isDelivered]); // ← add isDelivered
+
+//   useEffect(() => {
 //     if (hasFetchedRef.current) return;
 //     hasFetchedRef.current = true;
 
-//     const routeOrder = route?.params?.order;
-//     if (routeOrder?.OrderLines) {
-//       // Full order already attached to nav params — use it directly, no network call
-//       setOrder(routeOrder);
-//     } else {
-//       // Only have a partial order reference — fetch full details once
-//       const newOrderId = routeOrder?.order?.id ?? routeOrder?.id;
-//       fetchOrderDetail(newOrderId ? Number(newOrderId) : undefined);
+// const init = async () => {
+//   const coords = await fetchLocation(); // handles permission for both platforms
+//   if (!coords?.latitude || !coords?.longitude) {
+//     setShowPermission(true);
+//     return;
+//   }
+//   await loadOrder();
+// };
+
+//     init();
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   // ── Block back until delivered (Android hardware back) ────────────────────
+//   // useFocusEffect(
+//   //   useCallback(() => {
+//   //     const subscription = BackHandler.addEventListener(
+//   //       'hardwareBackPress',
+//   //       () => {
+//   //         if (isDelivered) return false; // allow default
+
+//   //         Alert.alert(
+//   //           'Order in Progress',
+//   //           'You cannot go back until the order is delivered.',
+//   //           [{ text: 'OK', style: 'cancel' }],
+//   //           { cancelable: false },
+//   //         );
+//   //         return true; // block
+//   //       },
+//   //     );
+
+//   //     return () => subscription.remove(); // RN 0.83+ API
+//   //   }, [isDelivered]),
+//   // );
+// useEffect(() => {
+//   const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+//     // If the order is delivered OR we are manually navigating away, allow it
+//     if (isDelivered || isNavigatingAway) {
+//       return;
 //     }
 
-//     // Fetch runner location once on mount
-//     fetchRunnerLocation();
-//   // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, []);
-  
-//   // ← intentionally empty: run once on mount only
+//     // Otherwise, stop the navigation action
+//     e.preventDefault();
 
-//   // ✅ Update map target when order status changes
-// //   useEffect(() => {
-// //     if (isPickedUp && deliveryLat && deliveryLng) {
-// //       logger.log('Updating target to customer location', { deliveryLat, deliveryLng });
-// //       setTargetLat(deliveryLat);
-// //       setTargetLng(deliveryLng);
-// //     } else if (!isPickedUp && outletLat && outletLng) {
-// //       logger.log('Updating target to outlet location', { outletLat, outletLng });
-// //       setTargetLat(outletLat);
-// //       setTargetLng(outletLng);
-// //     }
-// //   }, [isPickedUp, deliveryLat, deliveryLng, outletLat, outletLng, setTargetLat, setTargetLng]);
+//     Alert.alert(
+//       'Order in Progress', 
+//       'You cannot go back until the order is delivered.',
+//       [{ text: 'OK', style: 'cancel' }]
+//     );
+//   });
 
+//   return unsubscribe;
+// }, [navigation, isDelivered, isNavigatingAway]);
+//   // Block iOS swipe-back until delivered
+//   // useEffect(() => {
+//   //   navigation.setOptions({
+//   //     gestureEnabled: isDelivered,
+//   //     headerLeft: isDelivered ? undefined : () => null,
+//   //   });
+//   // }, [isDelivered, navigation]);
 
-//   // ── Picked up handler ───────────────────────────
+//   // ── Handlers ─────────────────────────────────────────────────────────────
 //   const handlePickedUp = async () => {
 //     try {
 //       setIsPickingUp(true);
-//       const currentOrderId = order?.id;           // capture before any async
+//       const currentOrderId = order?.id;
 //       const res = await pickedOrder(currentOrderId);
 //       if (res?.success) {
-//         // Fetch updated order — this updates `order` state once, not in a loop
 //         await fetchOrderDetail(Number(currentOrderId));
 //       }
 //     } catch (e) {
@@ -188,62 +239,78 @@
 //     }
 //   };
 
-//   // ── Deliver order handler ────────────────────────
-// const handleDeliverOrder = async () => {
-//   try {
-//     setIsDelivering(true);
-//     const currentOrderId = order?.id;
-//     const res = await deliverOrder(Number(currentOrderId));
-
-//     // Only show modal when API confirms success — toast is already
-//     // handled inside deliverOrder in the hook for both cases
-//     if (res?.success) {
-//       setShowSuccessModal(true);
+//   const handleDeliverOrder = async () => {
+//     try {
+//       setIsDelivering(true);
+//       const currentOrderId = order?.id;
+//       const res = await deliverOrder(Number(currentOrderId));
+//       if (res?.success) {
+//         setIsNavigatingAway(true);
+//         setIsDelivered(true);
+//         setShowSuccessModal(true);
+//       }
+//     } catch (e) {
+//       logger.log('handleDeliverOrder error', e);
+//     } finally {
+//       setIsDelivering(false);
 //     }
-//   } catch (e) {
-//     logger.log('handleDeliverOrder error', e);
-//   } finally {
-//     setIsDelivering(false);
-//   }
-// };
+//   };
 
-//   // if (isLoading) {
-//   //   return (
-//   //     <View style={styles.loaderContainer}>
-//   //       <ActivityIndicator size="large" color={Colors.orange} />
-//   //       <Text style={styles.loaderText}>Loading order details...</Text>
-//   //     </View>
-//   //   );
-//   // }
+//   const handleCall = () => {
+//     const phoneNumber = `tel:${customerPhone}`;
+//     Linking.canOpenURL(phoneNumber)
+//       .then(supported => {
+//         if (!supported) {
+//           toast('Phone calls are not supported on this device', 'error', 3000);
+//         } else {
+//           return Linking.openURL(phoneNumber);
+//         }
+//       })
+//       .catch(err => logger.log('Call error', err));
+//   };
 
+//   // Bottom sheet height scales with item count
+//   // const itemCount = orderLines?.length ?? 0;
+//   // const sheetMaxHeight = itemCount <= 3 ? 0.45 : 0.60;
+// // ── Map height = 60% of screen ────────────────────────────────────────────────
+// const MAP_HEIGHT = hp(60);
+
+// // ── Bottom sheet height scales with orderLines count ─────────────────────────
+// const itemCount      = orderLines?.length ?? 0;
+// const sheetMaxHeight = itemCount === 0 ? 0.20
+//   : itemCount === 1                    ? 0.30
+//   : itemCount === 2                    ? 0.38
+//   : itemCount === 3                    ? 0.45
+//   : itemCount <= 5                     ? 0.55
+//   : 0.65; // 6+ items
+//   // ── Render ────────────────────────────────────────────────────────────────
 //   return (
 //     <View style={styles.mainContainer}>
 //       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-//         {/* ── Map ── */}
-//         <View style={styles.mapContainer}>
+//         {/* ── Map ─────────────────────────────────────────────────────────── */}
+//         <View style={[styles.mapContainer, { height: MAP_HEIGHT }]}>
 //           {mapRegion ? (
-//             <>
+          
 //             <MapViewComponent
-//   runnerCoords={runnerCoords}
-//   targetLat={targetLat}
-//   targetLng={targetLng}
-//   mapRegion={mapRegion}
-//   isPickedUp={isPickedUp}
-//   outletName={outletName}
-//   customerName={customerName}
-//   customerImage={customerImage}
-//   outletImage={order?.Outlet?.image_url}
-//   runnerImage={user?.image_url}
-//   routeCoordinates={routeCoords}
-//   isRouteLoading={isRouteLoading}
-//   isLoading={isLoadingLocation}
-//   outletLat={outletLat}
-//   outletLng={outletLng}
-//   customerLat={deliveryLat}
-//   customerLng={deliveryLng}
-// />
-//             </>
+//               runnerCoords={runnerCoords}
+//               targetLat={targetLat}
+//               targetLng={targetLng}
+//               mapRegion={mapRegion}
+//               isPickedUp={isPickedUp}
+//               outletName={outletName}
+//               customerName={customerName}
+//               customerImage={customerImage}
+//               outletImage={order?.Outlet?.image_url}
+//               runnerImage={user?.image_url}
+//               routeCoordinates={routeCoords}
+//               isRouteLoading={isRouteLoading}
+//               isLoading={isLoadingLocation}
+//               outletLat={outletLat}
+//               outletLng={outletLng}
+//               customerLat={deliveryLat}
+//               customerLng={deliveryLng}
+//             />
 //           ) : (
 //             <View style={[styles.map, styles.fallback]}>
 //               <ActivityIndicator size="small" color={Colors.orange} />
@@ -252,30 +319,29 @@
 //           )}
 //         </View>
 
+//         {/* ── Info cards ──────────────────────────────────────────────────── */}
 //         <View style={styles.contentContainer}>
 
-//           {/* ── Outlet view (accepted) ── */}
+//           {/* Outlet view — before pickup */}
 //           {!isPickedUp && (
 //             <>
 //               <View style={styles.outletCard}>
 //                 <View style={styles.outletHeader}>
-
-//  {order?.Outlet?.image_url ? (
-//               <Image
-//                 source={{ uri: order?.Outlet?.image_url }}
-//                 style={styles.markerImage}
-//               />
-//             ) : (
-//                <View style={styles.outletIconContainer}>
-//                     <Store size={ms(24)} color={Colors.orange} />
-//                   </View>
-//             )}
-                  
-//                   {/* <View style={styles.outletIconContainer}>
-//                     <Store size={ms(24)} color={Colors.orange} />
-//                   </View> */}
+//                   {order?.Outlet?.image_url ? (
+//                     <Image
+//                       source={{ uri: order?.Outlet?.image_url }}
+//                       style={styles.markerImage}
+//                     />
+//                   ) : (
+//                     <View style={styles.outletIconContainer}>
+//                       <Store size={ms(24)} color={Colors.orange} />
+//                     </View>
+//                   )}
 //                   <View style={styles.outletInfo}>
-//                     <Text style={styles.outletLabel}>Pick up from</Text>
+//                     <View style={styles.outletHeaderRow}>
+//                       <Text style={styles.outletLabel}>Pick up from</Text>
+//                       <Text style={styles.orderId}>#{orderId}</Text>
+//                     </View>
 //                     <Text style={styles.outletName}>{outletName}</Text>
 //                   </View>
 //                 </View>
@@ -290,7 +356,7 @@
 //                 />
 //               </View>
 
-//  <View style={styles.infoContainer}>
+//               <View style={styles.infoContainer}>
 //                 <InfoRow
 //                   Icon={<Map size={16} color={Colors.borderColor1} />}
 //                   title="Distance"
@@ -300,41 +366,6 @@
 //                   iconStyle={styles.iconStyle}
 //                 />
 //               </View>
-// {/* NEW: Inline Order Details for Outlet View */}
-//       <View style={styles.inlineOrderDetails}>
-//         <Text style={styles.orderDetailsText}>
-//           Order Items 
-//           <Text style={styles.nOftext}> ({orderLines.length})</Text>
-//         </Text>
-//         <View style={styles.dottedLine} />
-//         {orderLines.map((item, index) => (
-//           <RenderItem
-//             key={item.id}
-//             item={{
-//               id: item.id,
-//               quantity: item.quantity,
-//               price: item.line_total_cents,
-//               menu_item: {
-//                 name: item.MenuItem?.name,
-//                 description: item.MenuItem?.description,
-//                 image_url: item.MenuItem?.image_url,
-//                 item_type: item.MenuItem?.item_type,
-//               },
-//               options: [],
-//             }}
-//             index={index}
-//           />
-//         ))}
-        
-//         {/* <CustomButton
-//           title={isPickingUp ? 'Confirming...' : 'Picked Up from Restaurant'}
-//           style={[styles.pickedButton, isPickingUp && styles.pickedButtonDisabled]}
-//           disabled={isPickingUp}
-//           onPress={handlePickedUp}
-//         /> */}
-//       </View>
-
-             
 
 //               <View style={styles.totalContainer}>
 //                 <Text style={styles.totalLabel}>Order Total</Text>
@@ -342,18 +373,36 @@
 //                   ${(totalCents / 100).toFixed(2)} {currency}
 //                 </Text>
 //               </View>
-
-//   <CustomButton
-//           title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
-//           style={[styles.pickedButton, isPickingUp && styles.pickedButtonDisabled]}
-//           disabled={isPickingUp}
-//           onPress={handlePickedUp}
-//         />
-
 //             </>
 //           )}
+// {/* {!isPickedUp && (
+//   <>
+//     <OutletInfoCard
+//       orderId={String(orderId)}
+//       outletName={outletName}
+//       outletAddress={outletAddress}
+//       outletImage={order?.Outlet?.image_url}
+//       distance={distance}
+//       onNavigate={() => {
+//         // Open in maps app
+//         const url = Platform.OS === 'ios'
+//           ? `maps://?q=${outletLat},${outletLng}`
+//           : `geo:${outletLat},${outletLng}?q=${outletLat},${outletLng}`;
+//         Linking.openURL(url).catch(err =>
+//           logger.log('Maps open error', err)
+//         );
+//       }}
+//     />
 
-//           {/* ── Customer view (picked) ── */}
+//     <View style={styles.totalContainer}>
+//       <Text style={styles.totalLabel}>Order Total</Text>
+//       <Text style={styles.totalValue}>
+//         ${(totalCents / 100).toFixed(2)} {currency}
+//       </Text>
+//     </View>
+//   </>
+// )} */}
+//           {/* Customer view — after pickup */}
 //           {isPickedUp && (
 //             <>
 //               <CustomerInfoCard
@@ -362,26 +411,16 @@
 //                 name={customerName}
 //                 room={outletName}
 //                 image={customerImage}
-//                onCall={() => {
-//     const phoneNumber = `tel:${customerPhone}`;
-//     Linking.canOpenURL(phoneNumber)
-//       .then((supported) => {
-//         if (!supported) {
-          
-//       toast('Phone calls are not supported on this device', 'error', 3000);
-//         } else {
-//           return Linking.openURL(phoneNumber);
-//         }
-//       })
-//       .catch((err) => console.error('An error occurred', err));
-//   }}
-//                 onMessage={() => console.log('Message')}
+//                 onCall={handleCall}
+//                 onMessage={() => logger.log('Message')}
 //                 style={styles.customerInfoCardStyle}
 //               />
 
 //               <View style={styles.infoRowStyle}>
 //                 <Text style={styles.titleNote}>Customer Note</Text>
-//                 <Text style={styles.descriptionTextStyle}>{customerNote}</Text>
+//                <Text style={styles.descriptionTextStyle}>
+//   {customerNote || 'No special instructions'}
+// </Text>
 //               </View>
 
 //               <View style={styles.infoContainer}>
@@ -411,117 +450,116 @@
 //               </View>
 //             </>
 //           )}
-
 //         </View>
-//         <View style={{ height: hp(35) }} />
+
+//         <View style={{ height: hp(20) }} />
 //       </ScrollView>
 
-//       {/* ── Bottom Sheet ── */}
+//       {/* ── Bottom Sheet ──────────────────────────────────────────────────── */}
+//     <BottomGradientBottomSheet
+//   visible={showSlideModal}
+//   onClose={() => setShowSlideModal(false)}
+//   maxHeightPercentage={sheetMaxHeight}  // ← dynamic
+//   minHeightPercentage={0.15}
+// >
+//         {/* Drag handle */}
+//         <View style={styles.modalLine} />
 
-// {isPickedUp && (
-//     <>
+//         {/* Section header */}
+//         <Text style={styles.sectionTitle}>
+//           {isPickedUp ? 'Order Details' : 'Order Items'}
+//           <Text style={styles.nOftext}> ({itemCount} items)</Text>
+//         </Text>
+//         <View style={styles.dottedLine} />
 
-//       <BottomGradientBottomSheet
-//         visible={showSlideModal}
-//         onClose={() => setShowSlideModal(false)}
-//       >
-//         <View style={styles.bottomSheetContent}>
-//           <View style={styles.modalLine} />
-//           <Text style={styles.orderDetailsText}>
-//             Order Details
-//             <Text style={styles.nOftext}> (no of items: {orderLines.length})</Text>
-//           </Text>
-//           <View style={[styles.dottedLine, { marginBottom: vs(10) }]} />
+//         {/* Order items */}
+//         {orderLines.length === 0 ? (
+//           <View style={styles.emptyContainer}>
+//             <Text style={styles.emptyText}>No items</Text>
+//           </View>
+//         ) : (
+//           orderLines.map((item: any, index: number) => (
+//             <RenderItem
+//               key={String(item.id)}
+//               item={{
+//                 id: item.id,
+//                 quantity: item.quantity,
+//                 price: item.line_total_cents,
+//                 menu_item: {
+//                   name: item.MenuItem?.name,
+//                   description: item.MenuItem?.description,
+//                   image_url: item.MenuItem?.image_url,
+//                   item_type: item.MenuItem?.item_type,
+//                 },
+//                 options: [],
+//               }}
+//               index={index}
+//             />
+//           ))
+//         )}
 
-//           <FlatList
-//             data={orderLines}
-//             keyExtractor={(item) => String(item.id)}
-//             showsVerticalScrollIndicator={false}
-//             contentContainerStyle={{ paddingHorizontal: ms(16) }}
-//             renderItem={({ item, index }) => (
-//               <RenderItem
-//                 item={{
-//                   id:       item.id,
-//                   quantity: item.quantity,
-//                   price:    item.line_total_cents,
-//                   menu_item: {
-//                     name:        item.MenuItem?.name,
-//                     description: item.MenuItem?.description,
-//                     image_url:   item.MenuItem?.image_url,
-//                     item_type:   item.MenuItem?.item_type,
-//                   },
-//                   options: [],
-//                 }}
-//                 index={index}
-//               />
-//             )}
-//           />
-
+//         {/* CTA button */}
+//         <View style={styles.ctaContainer}>
 //           {!isPickedUp ? (
 //             <CustomButton
 //               title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
-//               style={[styles.pickedButton, isPickingUp && styles.pickedButtonDisabled]}
+//               style={[styles.pickupButton, isPickingUp && styles.buttonDisabled]}
 //               disabled={isPickingUp}
 //               onPress={handlePickedUp}
 //             />
 //           ) : (
 //             <CustomButton
 //               title={isDelivering ? 'Delivering...' : 'Mark as Delivered'}
-//               style={[styles.acceptButton, isDelivering && { opacity: 0.7 }]}
+//               style={[styles.deliverButton, isDelivering && styles.buttonDisabled]}
 //               disabled={isDelivering}
 //               onPress={handleDeliverOrder}
 //             />
 //           )}
 //         </View>
 //       </BottomGradientBottomSheet>
-// </>
-//   )}
+
+//       {/* ── Success Modal ─────────────────────────────────────────────────── */}
 //       <SuccessModal
 //         icon={Greenticksvg}
 //         visible={showSuccessModal}
-//        // onClose={() => setShowSuccessModal(false)}
-//        onClose={() => {}} 
-//        onPress={() => {
+//         onClose={() => {}}
+//         onPress={() => {
 //           setShowSuccessModal(false);
-//           navigation.navigate('Home');
+//        navigation.reset({
+//   index: 0,
+//   routes: [{ name: 'Home' }],
+// });
 //         }}
 //         title="Successfully Delivered!"
 //         message="Your order has been delivered successfully."
 //       />
+
+//       {/* ── Permission Modal ──────────────────────────────────────────────── */}
+//       {/* <PermissionFlowModal
+//         visible={showPermission}
+//         onComplete={async () => {
+//           setShowPermission(false);
+//           // Retry after permission granted
+//           const coords = await fetchLocation();
+//           if (coords?.latitude && coords?.longitude) {
+//             await loadOrder();
+//           }
+//         }}
+//       /> */}
 //     </View>
 //   );
 // };
 
 // export default CustomerInfoScreen;
 
+// // ── Styles ────────────────────────────────────────────────────────────────────
 // const styles = StyleSheet.create({
-//   mainContainer: {
-//     flex: 1,
-//     backgroundColor: Colors.white,
-//   },
-//   loaderContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: Colors.white,
-//     gap: vs(12),
-//   },
-//   loaderText: {
-//     fontSize: fontSize(14),
-//     fontFamily: Typography.Regular.fontFamily,
-//     color: Colors.borderColor1,
-//   },
-//   container: {
-//     flex: 1,
-//     backgroundColor: Colors.white,
-//   },
-//   mapContainer: {
-//     marginBottom: ms(16),
-//   },
-//   map: {
-//     width: '100%',
-//     height: hp(38),
-//   },
+//   mainContainer: { flex: 1, backgroundColor: Colors.white },
+//   container: { flex: 1, backgroundColor: Colors.white },
+
+//   // Map
+//   mapContainer: { marginBottom: ms(16) },
+//   map: { width: '100%', height: hp(38) },
 //   fallback: {
 //     justifyContent: 'center',
 //     alignItems: 'center',
@@ -533,17 +571,15 @@
 //     fontFamily: Typography.Regular.fontFamily,
 //     color: Colors.borderColor1,
 //   },
-//   imageStyle: {
-//     height: hp(42),
-//     resizeMode: 'cover',
-//     width: '100%',
-//   },
+
+//   // Content
 //   contentContainer: {
 //     flex: 1,
 //     marginHorizontal: ms(16),
 //     gap: ms(12),
 //   },
-//   // ── Outlet card ──────────────────────────
+
+//   // Outlet card
 //   outletCard: {
 //     backgroundColor: Colors.customerInfoCardBg,
 //     borderRadius: ms(14),
@@ -555,11 +591,12 @@
 //     gap: ms(12),
 //     marginBottom: vs(12),
 //   },
-//   markerImage: {
-//     width: ms(48),
-//     height: ms(48),
-//     borderRadius: ms(24),
+//   outletHeaderRow: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     alignItems: 'center',
 //   },
+//   markerImage: { width: ms(48), height: ms(48), borderRadius: ms(24) },
 //   outletIconContainer: {
 //     width: ms(48),
 //     height: ms(48),
@@ -568,13 +605,16 @@
 //     justifyContent: 'center',
 //     alignItems: 'center',
 //   },
-//   outletInfo: {
-//     flex: 1,
-//   },
+//   outletInfo: { flex: 1 },
 //   outletLabel: {
 //     fontSize: fontSize(12),
 //     fontFamily: Typography.Regular.fontFamily,
 //     color: Colors.borderColor1,
+//   },
+//   orderId: {
+//     fontSize: fontSize(16),
+//     color: Colors.black,
+//     ...Typography.SemiBold,
 //   },
 //   outletName: {
 //     fontSize: fontSize(16),
@@ -587,45 +627,18 @@
 //     backgroundColor: Colors.borderColor,
 //     marginBottom: vs(12),
 //   },
-//   pickedButton: {
-//   backgroundColor: Colors.orange,
-//   alignSelf: 'center',
-//   marginBottom: ms(20),
-//   borderRadius: ms(15),
-//   },
-//   // ── Customer card ─────────────────────────
-//   customerInfoCardStyle: {
-//     maxHeight: hp(20),
-//   },
-//   infoRowStyle: {
-//     backgroundColor: Colors.customerInfoCardBg,
-//     paddingHorizontal: ms(16),
-//     borderRadius: ms(14),
-//   },
-//   titleNote: {
-//     color: Colors.borderColor1,
-//     fontSize: fontSize(14),
-//     fontFamily: Typography.Medium.fontFamily,
-//     paddingVertical: ms(8),
-//   },
-//   descriptionTextStyle: {
-//     fontFamily: Typography.Regular.fontFamily,
-//     fontSize: fontSize(12),
-//     color: Colors.black,
-//     paddingBottom: ms(8),
-//   },
+
+//   // Info rows
 //   infoContainer: {
 //     backgroundColor: Colors.customerInfoCardBg,
 //     paddingHorizontal: ms(16),
 //     borderRadius: ms(14),
 //     paddingTop: vs(8),
 //   },
-//   subtextStyle: {
-//     marginLeft: 0,
-//   },
-//   iconStyle: {
-//     marginLeft: 5,
-//   },
+//   subtextStyle: { marginLeft: 0 },
+//   iconStyle: { marginLeft: 5 },
+
+//   // Total
 //   totalContainer: {
 //     flexDirection: 'row',
 //     justifyContent: 'space-between',
@@ -645,24 +658,38 @@
 //     fontFamily: Typography.Bold.fontFamily,
 //     color: Colors.black1,
 //   },
-//   // ── Bottom Sheet ──────────────────────────
+
+//   // Customer card
+//   customerInfoCardStyle: { maxHeight: hp(20) },
+//   infoRowStyle: {
+//     backgroundColor: Colors.customerInfoCardBg,
+//     paddingHorizontal: ms(16),
+//     borderRadius: ms(14),
+//   },
+//   titleNote: {
+//     color: Colors.borderColor1,
+//     fontSize: fontSize(14),
+//     fontFamily: Typography.Medium.fontFamily,
+//     paddingVertical: ms(8),
+//   },
+//   descriptionTextStyle: {
+//     fontFamily: Typography.Regular.fontFamily,
+//     fontSize: fontSize(12),
+//     color: Colors.black,
+//     paddingBottom: ms(8),
+//   },
+
+//   // Bottom sheet
 //   modalLine: {
 //     width: ms(50),
 //     height: vs(4),
 //     backgroundColor: Colors.black,
 //     alignSelf: 'center',
 //     borderRadius: ms(10),
-//     marginVertical: vs(10),
+//     marginTop: vs(10),
+//     marginBottom: vs(4),
 //   },
-//   inlineOrderDetails: {
-//     backgroundColor: Colors.customerInfoCardBg,
-//     borderRadius: ms(14),
-//     paddingBottom: vs(10),
-//     marginTop: ms(4),
-//   },
-//   // Ensure the button inside the inline view has some margin
-
-//   orderDetailsText: {
+//   sectionTitle: {
 //     fontFamily: Typography.SemiBold.fontFamily,
 //     fontSize: fontSize(14),
 //     paddingHorizontal: ms(20),
@@ -673,26 +700,56 @@
 //     fontSize: fontSize(14),
 //     fontFamily: Typography.Medium.fontFamily,
 //   },
-//   acceptButton: {
-//     backgroundColor: Colors.green2,
-//     alignSelf: 'center',
-//     marginBottom: ms(20),
-//     borderRadius: ms(15),
-//   },
 //   dottedLine: {
 //     borderBottomWidth: 1.4,
 //     borderBottomColor: '#E4E4EB',
 //     borderStyle: 'dashed',
-//     marginVertical: ms(6),
+//     marginVertical: ms(4),
+//     marginHorizontal: ms(16),
+//     marginBottom: vs(8),
 //   },
-//   bottomSheetContent: {
-//     flex: 1,
+//   emptyContainer: {
+//     paddingVertical: vs(40),
+//     alignItems: 'center',
 //   },
-//   pickedButtonDisabled: {
-//     opacity: 0.7,
+//   emptyText: {
+//     fontSize: fontSize(14),
+//     fontFamily: Typography.Regular.fontFamily,
+//     color: Colors.borderColor1,
 //   },
+
+//   // CTA button
+//   ctaContainer: {
+//     position: 'absolute',
+//     bottom: vs(20),
+//     left: 0,
+//     right: 0,
+//     paddingHorizontal: ms(16),
+//   },
+//   pickupButton: {
+//     backgroundColor: Colors.orange,
+//     borderRadius: ms(10),
+//     height: vs(50),
+//     width: '100%',
+//     alignSelf: 'center',
+//   },
+//   deliverButton: {
+//     backgroundColor: Colors.green2,
+//     borderRadius: ms(10),
+//     height: vs(50),
+//     width: '100%',
+//     alignSelf: 'center',
+//   },
+//   buttonDisabled: { opacity: 0.7 },
 // });
-import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
+
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  useRef,
+  useCallback,
+} from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -701,9 +758,10 @@ import {
   ActivityIndicator,
   Image,
   Linking,
-  BackHandler,
   Alert,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomerInfoCard from '../../components/cards/CustmerInfoCard';
 import InfoRow from '../../components/Row/InfoRow';
 import Colors from '../../utils/colors';
@@ -715,6 +773,8 @@ import BottomGradientBottomSheet from '../../components/modals/BottomGradientBot
 import SuccessModal from '../../components/modals/SuccessModal';
 import Greenticksvg from '../../assets/svg/Greenticksvg';
 import RenderItem from '../../components/RenderItem/RenderItem';
+import { FlashList } from '@shopify/flash-list';
+
 import { useOrderDetail } from '../../hooks/useOrderDetail';
 import { pickedOrder } from '../../services/Orders/order.api';
 import { logger } from '../../utils/logger';
@@ -722,81 +782,99 @@ import { useMapLocation } from '../../hooks/useMapLocation';
 import MapViewComponent from '../../components/Map/MapViewComponent';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/ToastProvider';
+import LocationService from '../../hooks/LocationModule.android';
+import { useUserLocation } from '../../hooks/useUserLocation';
 import { useFocusEffect } from '@react-navigation/native';
+import ChatService from '../../services/Chat/ChatService';
+import { makePhoneCall } from '../../utils/phoneCall';
+import PermissionFlowModal from '../../components/modals/PermissionFlowModal';
+import { useAppPermissions } from '../../hooks/useAppPermissions';
 
-const CustomerInfoScreen = ({ navigation, route }) => {
+// ── Helper: safely parse a coordinate value ───────────────────────────────────
+const safeCoord = (val: any): number | null => {
+  const n = parseFloat(val);
+  return isNaN(n) || n === 0 ? null : n;
+};
+
+// ── CustomerInfoScreen ────────────────────────────────────────────────────────
+const CustomerInfoScreen = ({ navigation, route }: any) => {
+// Inside your component:
+const insets = useSafeAreaInsets();
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+    const { ensureLocationAccess } = useAppPermissions();
+// 1️⃣  ADD these two state variables after your existing useState declarations:
+const [unreadCount, setUnreadCount]   = useState(0);
+const [lastMessage, setLastMessage]   = useState<string | undefined>(undefined);
+// 2️⃣  ADD a ref to hold the chat unsubscribe function:
+const chatUnsubscribeRef = useRef<(() => void) | null>(null);
+
+
+  // ── State ─────────────────────────────────────────────────────────────────
   const [showSlideModal, setShowSlideModal]     = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isPickingUp, setIsPickingUp]           = useState(false);
   const [isDelivering, setIsDelivering]         = useState(false);
+  const [isDelivered, setIsDelivered]           = useState(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
 
+  // ── Refs ──────────────────────────────────────────────────────────────────
+  // Ref to freeze delivery state synchronously — prevents stale closure issues
+  const isDeliveredRef  = useRef(false);
+  const hasFetchedRef   = useRef(false);
+  const runnerCoordsRef = useRef<any>(null);
+
+  // ── Hooks ─────────────────────────────────────────────────────────────────
   const { order, setOrder, fetchOrderDetail, deliverOrder } = useOrderDetail();
-  const { user }  = useContext(AuthContext) || {};
-  const { toast } = useToast();
-  const hasFetchedRef = useRef(false);
+  const { user }    = useContext(AuthContext) || {};
+  const { toast }   = useToast();
+  const { refetch: fetchIOSLocation } = useUserLocation();
 
-  // ── Block back navigation until order is delivered ────────────────────────
-// ── Track delivery completion ─────────────────────────────────────────
-const [isDelivered, setIsDelivered] = useState(false);
+  // ── Location helper ───────────────────────────────────────────────────────
+  const fetchLocation = async (): Promise<{ latitude: number; longitude: number } | null> => {
+    try {
+      if (Platform.OS === 'android') {
+        const data = await LocationService.getCurrentLocation();
+        return { latitude: data.latitude, longitude: data.longitude };
+      }
+      return await fetchIOSLocation();
+    } catch (err) {
+      logger.error('fetchLocation error:', err);
+      return null;
+    }
+  };
 
-// ── Block back ONLY until delivered ──────────────────────────────────
-useFocusEffect(
-  useCallback(() => {
-    const onBackPress = () => {
-      if (isDelivered) return false; // ← allow default back when delivered
-
-      Alert.alert(
-        'Order in Progress',
-        'You cannot go back until the order is delivered.',
-        [{ text: 'OK', style: 'cancel' }],
-        { cancelable: false }
-      );
-      return true; // block back
-    };
-
-    BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-  }, [isDelivered]) // ← re-registers when isDelivered changes
-);
-
-useEffect(() => {
-  // Re-enable iOS swipe-back once delivered
-  navigation.setOptions({
-    gestureEnabled: isDelivered,
-    headerLeft: isDelivered ? undefined : () => null,
-  });
-}, [isDelivered, navigation]);
-
-  // ── Derived values ────────────────────────────────────────────────────────
+  // ── Derived order values ──────────────────────────────────────────────────
   const orderStatus = order?.status ?? 'assigned';
-  const isPickedUp  = orderStatus === 'picked_up';
 
-  const outletName    = order?.Outlet?.name         ?? '';
-  const outletAddress = order?.Outlet?.address      ?? '';
-  const outletLat     = order?.Outlet?.location_lat ?? null;
-  const outletLng     = order?.Outlet?.location_lng ?? null;
+  // ✅ Freeze isPickedUp when delivered — prevents button flip back to "Confirm Pickup"
+  const isPickedUp = isDeliveredRef.current ? true : orderStatus === 'picked_up';
+
+  const outletName    = order?.Outlet?.name    ?? '';
+  const outletAddress = order?.Outlet?.address ?? '';
+
+  const outletLat   = safeCoord(order?.Outlet?.location_lat);
+  const outletLng   = safeCoord(order?.Outlet?.location_lng);
+  const deliveryLat = safeCoord(order?.delivery_lat);
+  const deliveryLng = safeCoord(order?.delivery_lng);
 
   const customerName  = order?.User?.display_name ?? 'Customer';
   const customerPhone = order?.User?.phone        ?? '';
   const customerImage = order?.User?.image_url    ?? 'https://randomuser.me/api/portraits/women/44.jpg';
-  const userId        = order?.User?.id           ?? '—';
+  const customerId        = order?.User?.id           ?? '—';
 
   const orderId      = order?.id            ?? '—';
-  const customerNote = order?.customer_note ?? 'No special instructions';
+  const customerNote = order?.customer_note ?? '';
   const orderLines   = order?.OrderLines    ?? [];
   const totalCents   = parseInt(order?.total_cents ?? '0', 10);
   const currency     = order?.currency      ?? 'USD';
 
   const deliveryLocation = order?.delivery_text || outletAddress || 'Resort pickup';
-  const deliveryLat      = parseFloat(order?.delivery_lat);
-  const deliveryLng      = parseFloat(order?.delivery_lng);
-  const outletLatNum     = parseFloat(order?.Outlet?.location_lat);
-  const outletLngNum     = parseFloat(order?.Outlet?.location_lng);
 
-  const targetLat = isPickedUp ? (deliveryLat || outletLatNum || 0) : (outletLatNum || 0);
-  const targetLng = isPickedUp ? (deliveryLng || outletLngNum || 0) : (outletLngNum || 0);
+  // Target switches between outlet (before pickup) and customer (after pickup)
+  const targetLat = isPickedUp ? deliveryLat : outletLat;
+  const targetLng = isPickedUp ? deliveryLng : outletLng;
 
-  // ── Map ───────────────────────────────────────────────────────────────────
+  // ── Map hook ──────────────────────────────────────────────────────────────
   const {
     runnerCoords,
     routeCoords,
@@ -808,20 +886,89 @@ useEffect(() => {
     distance,
   } = useMapLocation(targetLat, targetLng);
 
-  const runnerCoordsRef = useRef(runnerCoords);
-  useEffect(() => { runnerCoordsRef.current = runnerCoords; }, [runnerCoords]);
+
+// 3️⃣  ADD this useFocusEffect BELOW your existing useFocusEffect (order-refresh one).
+//     It subscribes to the chat room for this order so the badge updates in real-time.
+useFocusEffect(
+  useCallback(() => {
+    if (!orderId || orderId === '—' || !user?.id) return;
+
+    let unsubscribe: (() => void) | null = null;
+
+    const subscribeToChat = async () => {
+      try {
+        // Get the chat room for this order (don't create — just fetch if exists)
+        const chatRoomData = await ChatService.getOrCreateChatRoom(
+          String(orderId),
+          String(customerId),
+          customerName,
+          String(user.id),   // runnerId not needed — room is keyed by orderId
+          user.display_name,
+        );
+
+        unsubscribe = ChatService.getMessages(chatRoomData.id, (messages) => {
+          // Count messages not sent by runner (i.e. from customer) that are unread
+          const unread = messages.filter(
+            (m) => m.senderId !== user.id && !m.read
+          ).length;
+
+          const latest = messages[messages.length - 1];
+
+          setUnreadCount(unread);
+          setLastMessage(latest?.senderId !== user.id ? latest?.text : undefined);
+        });
+
+        chatUnsubscribeRef.current = unsubscribe;
+      } catch (err) {
+        // Chat room may not exist yet — that's fine, ignore silently
+      }
+    };
+
+   // subscribeToChat();
+
+    // Cleanup on blur
+    return () => {
+      unsubscribe?.();
+      chatUnsubscribeRef.current = null;
+    };
+  }, [orderId, user?.id, customerName]),
+);
+
+// ── Refresh order when screen comes back into focus (e.g. returning from Chat) ─
+useFocusEffect(
+  useCallback(() => {
+    logger.log('CustomerInfoScreen: useFocusEffect');
+    // Skip on first mount (hasFetchedRef handles that) and skip if delivered
+    if (!hasFetchedRef.current || isDeliveredRef.current) return;
+ const routeOrder = route?.params?.order;
+   const newOrderId = routeOrder?.order?.id ?? routeOrder?.id;
+   logger.log('CustomerInfoScreen: newOrderId', newOrderId);
+    if (newOrderId) {
+      fetchOrderDetail(Number(newOrderId));
+    }
+    fetchRunnerLocation();
+  }, [route?.params?.order]),
+);
+
 
   useEffect(() => {
+    runnerCoordsRef.current = runnerCoords;
+  }, [runnerCoords]);
+
+  // Re-fetch route when destination changes (pickup → delivery)
+  // ✅ Guard: skip if delivered
+  useEffect(() => {
+    if (isDeliveredRef.current) return;
     if (runnerCoordsRef.current && targetLat && targetLng) {
       fetchRoute(targetLat, targetLng);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetLat, targetLng]);
 
-  // ── Mount: load order + runner location once ──────────────────────────────
-  useEffect(() => {
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
+  // ── Load order ────────────────────────────────────────────────────────────
+  const loadOrder = useCallback(async () => {
+    // ✅ Don't reload if already delivered
+    if (isDeliveredRef.current) return;
 
     const routeOrder = route?.params?.order;
     if (routeOrder?.OrderLines) {
@@ -832,15 +979,69 @@ useEffect(() => {
     }
     fetchRunnerLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.order]);
+
+
+const loadLocationSafely = async (): Promise<{ latitude: number; longitude: number } | null> => {
+  const access = await ensureLocationAccess();
+
+  if (access.status === 'NO_PERMISSION') {
+    setShowPermissionModal(true);
+    return null;
+  }
+
+  if (access.status === 'SERVICES_DISABLED') {
+    setShowPermissionModal(true);
+    return null;
+  }
+
+  // Safe to fetch
+  return await fetchLocation();
+};
+
+  // ── Mount: fetch location then load order (runs once) ────────────────────
+  useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
+    const init = async () => {
+      const coords = await loadLocationSafely();
+      if (!coords?.latitude || !coords?.longitude) {
+        // Permission denied — could show permission modal here if needed
+        return;
+      }
+      await loadOrder();
+    };
+
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Action handlers ───────────────────────────────────────────────────────
+  // ── Block back navigation until delivered ─────────────────────────────────
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      if (isDelivered || isNavigatingAway) return;
+
+      e.preventDefault();
+      Alert.alert(
+        'Order in Progress',
+        'You cannot go back until the order is delivered.',
+        [{ text: 'OK', style: 'cancel' }],
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, isDelivered, isNavigatingAway]);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   const handlePickedUp = async () => {
     try {
       setIsPickingUp(true);
       const currentOrderId = order?.id;
       const res = await pickedOrder(currentOrderId);
-      if (res?.success) {
+      // ✅ Guard: don't refresh order after delivery
+      if (res?.success && !isDeliveredRef.current) {
         await fetchOrderDetail(Number(currentOrderId));
       }
     } catch (e) {
@@ -856,7 +1057,11 @@ useEffect(() => {
       const currentOrderId = order?.id;
       const res = await deliverOrder(Number(currentOrderId));
       if (res?.success) {
-         setIsDelivered(true); 
+        // ✅ Freeze ref synchronously BEFORE any state updates
+        isDeliveredRef.current = true;
+        setIsNavigatingAway(true);
+        setIsDelivered(true);
+        setShowSlideModal(false);   // ← hide bottom sheet immediately
         setShowSuccessModal(true);
       }
     } catch (e) {
@@ -865,53 +1070,81 @@ useEffect(() => {
       setIsDelivering(false);
     }
   };
-
-  const handleCall = () => {
-    const phoneNumber = `tel:${customerPhone}`;
-    Linking.canOpenURL(phoneNumber)
-      .then((supported) => {
-        if (!supported) {
-          toast('Phone calls are not supported on this device', 'error', 3000);
-        } else {
-          return Linking.openURL(phoneNumber);
-        }
-      })
-      .catch((err) => logger.log('Call error', err));
+// 4️⃣  UPDATE handleChat to reset badge when runner opens chat:
+const handleChat = () => {
+  setUnreadCount(0);   // 👈 clear badge immediately on open
+  setLastMessage(undefined);
+  navigation.navigate('Chat', {
+    orderId,
+    customerId,
+    customerName,
+    customerPhone,
+    customerImage,
+    runnerName:  user?.display_name,
+    runnerImage: user?.image_url,
+    runnerId:    user?.id,
+  });
+};
+  const handleCall = async () => {
+     await makePhoneCall(customerPhone || '', 'Customer', toast);
+    // const phoneNumber = `tel:${customerPhone}`;
+    // Linking.canOpenURL(phoneNumber)
+    //   .then(supported => {
+    //     if (!supported) {
+    //       toast('Phone calls are not supported on this device', 'error', 3000);
+    //     } else {
+    //       return Linking.openURL(phoneNumber);
+    //     }
+    //   })
+    //   .catch(err => logger.log('Call error', err));
   };
 
-  // ── Sheet height scales with item count ───────────────────────────────────
-  const itemCount      = orderLines?.length ?? 0;
-  const sheetMaxHeight = itemCount <= 3 ? 0.45 : 0.60;
+  // ── Dynamic heights ───────────────────────────────────────────────────────
+  const MAP_HEIGHT = hp(60);
 
+  const itemCount = orderLines?.length ?? 0;
+  const sheetMaxHeight =
+    itemCount === 0 ? 0.20
+    : itemCount === 1 ? 0.33
+    : itemCount === 2 ? 0.40
+    : itemCount === 3 ? 0.45
+    : itemCount <= 5  ? 0.55
+    : 0.65;
+
+  // List height inside bottom sheet — caps so button stays visible
+  const listHeight = itemCount <= 2 ? undefined : vs(200);
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.mainContainer}>
+
+      {/* ── Main scroll ───────────────────────────────────────────────────── */}
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
         {/* ── Map ─────────────────────────────────────────────────────────── */}
-        <View style={styles.mapContainer}>
+        <View style={[styles.mapContainer, { height: MAP_HEIGHT }]}>
           {mapRegion ? (
-            <></>
-            // <MapViewComponent
-            //   runnerCoords={runnerCoords}
-            //   targetLat={targetLat}
-            //   targetLng={targetLng}
-            //   mapRegion={mapRegion}
-            //   isPickedUp={isPickedUp}
-            //   outletName={outletName}
-            //   customerName={customerName}
-            //   customerImage={customerImage}
-            //   outletImage={order?.Outlet?.image_url}
-            //   runnerImage={user?.image_url}
-            //   routeCoordinates={routeCoords}
-            //   isRouteLoading={isRouteLoading}
-            //   isLoading={isLoadingLocation}
-            //   outletLat={outletLat}
-            //   outletLng={outletLng}
-            //   customerLat={deliveryLat}
-            //   customerLng={deliveryLng}
-            // />
+            <MapViewComponent
+              runnerCoords={runnerCoords}
+              targetLat={targetLat}
+              targetLng={targetLng}
+              mapRegion={mapRegion}
+              isPickedUp={isPickedUp}
+              outletName={outletName}
+              customerName={customerName}
+              customerImage={customerImage}
+              outletImage={order?.Outlet?.image_url}
+              runnerImage={user?.image_url}
+              routeCoordinates={routeCoords}
+              isRouteLoading={isRouteLoading}
+              isLoading={isLoadingLocation}
+              outletLat={outletLat}
+              outletLng={outletLng}
+              customerLat={deliveryLat}
+              customerLng={deliveryLng}
+            />
           ) : (
-            <View style={[styles.map, styles.fallback]}>
+            <View style={styles.mapFallback}>
               <ActivityIndicator size="small" color={Colors.orange} />
               <Text style={styles.fallbackText}>Loading map...</Text>
             </View>
@@ -921,24 +1154,26 @@ useEffect(() => {
         {/* ── Info cards ──────────────────────────────────────────────────── */}
         <View style={styles.contentContainer}>
 
-          {/* Outlet view */}
+          {/* Outlet view — before pickup */}
           {!isPickedUp && (
             <>
               <View style={styles.outletCard}>
                 <View style={styles.outletHeader}>
                   {order?.Outlet?.image_url ? (
-                    <Image source={{ uri: order?.Outlet?.image_url }} style={styles.markerImage} />
+                    <Image
+                      source={{ uri: order?.Outlet?.image_url }}
+                      style={styles.markerImage}
+                    />
                   ) : (
                     <View style={styles.outletIconContainer}>
                       <Store size={ms(24)} color={Colors.orange} />
                     </View>
                   )}
                   <View style={styles.outletInfo}>
-                    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-  <Text style={styles.outletLabel}>Pick up from</Text>
-                       <Text style={styles.orderId}>#{orderId}</Text>
+                    <View style={styles.outletHeaderRow}>
+                      <Text style={styles.outletLabel}>Pick up from</Text>
+                      <Text style={styles.orderId}>#{orderId}</Text>
                     </View>
-                  
                     <Text style={styles.outletName}>{outletName}</Text>
                   </View>
                 </View>
@@ -973,23 +1208,27 @@ useEffect(() => {
             </>
           )}
 
-          {/* Customer view */}
+          {/* Customer view — after pickup */}
           {isPickedUp && (
             <>
               <CustomerInfoCard
                 orderId={String(orderId)}
-                customerId={String(userId)}
+                customerId={String(customerId)}
                 name={customerName}
                 room={outletName}
                 image={customerImage}
-                onCall={handleCall}
-                onMessage={() => console.log('Message')}
+                onCall={handleCall} 
+                onMessage={handleChat}
                 style={styles.customerInfoCardStyle}
+                unreadCount={unreadCount}       // 👈 add this
+                lastMessage={lastMessage}  
               />
 
               <View style={styles.infoRowStyle}>
                 <Text style={styles.titleNote}>Customer Note</Text>
-                <Text style={styles.descriptionTextStyle}>{customerNote}</Text>
+                <Text style={styles.descriptionTextStyle}>
+                  {customerNote || 'No special instructions'}
+                </Text>
               </View>
 
               <View style={styles.infoContainer}>
@@ -1021,79 +1260,84 @@ useEffect(() => {
           )}
         </View>
 
-        <View style={{ height: hp(40) }} />
+        {/* Space so content isn't hidden behind bottom sheet */}
+        <View style={{ height: hp(sheetMaxHeight * 100 + 5) }} />
       </ScrollView>
 
-      {/* ════════════════════════════════════════════════════════════════════
-          BottomGradientBottomSheet — both outlet + customer views
-          Scroll is handled internally by BottomSheetScrollView.
-          Children here are plain Views — NO FlatList or ScrollView needed.
-          ════════════════════════════════════════════════════════════════════ */}
+      {/* ── Bottom Sheet ──────────────────────────────────────────────────── */}
       <BottomGradientBottomSheet
-        visible={showSlideModal}
+        visible={showSlideModal && !isDelivered}  // ✅ hide on delivery
         onClose={() => setShowSlideModal(false)}
         maxHeightPercentage={sheetMaxHeight}
         minHeightPercentage={0.15}
       >
-        {/* ── Drag handle ───────────────────────────────────────────────── */}
+        {/* Drag handle */}
         <View style={styles.modalLine} />
 
-        {/* ── Section header ────────────────────────────────────────────── */}
+        {/* Section header */}
         <Text style={styles.sectionTitle}>
           {isPickedUp ? 'Order Details' : 'Order Items'}
           <Text style={styles.nOftext}> ({itemCount} items)</Text>
         </Text>
         <View style={styles.dottedLine} />
 
-        {/* ── Order items — rendered as plain Views (BottomSheetScrollView
-            inside BottomGradientBottomSheet handles the scroll gesture) ── */}
+        {/* Order items via FlashList */}
         {orderLines.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No items</Text>
           </View>
         ) : (
-          orderLines.map((item: any, index: number) => (
-            <RenderItem
-              key={String(item.id)}
-              item={{
-                id:       item.id,
-                quantity: item.quantity,
-                price:    item.line_total_cents,
-                menu_item: {
-                  name:        item.MenuItem?.name,
-                  description: item.MenuItem?.description,
-                  image_url:   item.MenuItem?.image_url,
-                  item_type:   item.MenuItem?.item_type,
-                },
-                options: [],
-              }}
-              index={index}
+         <View style={listHeight ? { height: listHeight, flex: 1 } : { flexShrink: 1, flex: 1 }}>
+            <FlashList
+              data={orderLines}
+              estimatedListSize={70}
+              keyExtractor={(item: any) => String(item.id)}
+              showsVerticalScrollIndicator={itemCount > 3}
+              scrollEnabled={true}
+                nestedScrollEnabled={true}          // 👈 fixes scroll inside BottomSheet
+  overScrollMode="never"              // 👈 removes Android overscroll glow
+  decelerationRate="normal" 
+              renderItem={({ item, index }: any) => (
+                <RenderItem
+                  item={{
+                    id:       item.id,
+                    quantity: item.quantity,
+                    price:    item.line_total_cents,
+                    menu_item: {
+                      name:        item.MenuItem?.name,
+                      description: item.MenuItem?.description,
+                      image_url:   item.MenuItem?.image_url,
+                      item_type:   item.MenuItem?.item_type,
+                    },
+                    options: [],
+                  }}
+                  index={index}
+                />
+              )}
             />
-          ))
+          </View>
         )}
 
-        {/* ── CTA button — inline at the bottom of scroll content ─────────
-            paddingBottom in BottomGradientBottomSheet's scrollContent
-            ensures this is never hidden behind system nav bar.           */}
-        <View style={styles.ctaContainer}>
-          {!isPickedUp ? (
-            <CustomButton
-              title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
-              style={[styles.pickupButton, isPickingUp && styles.buttonDisabled]}
-              disabled={isPickingUp}
-            //  loading={isPickingUp}
-              onPress={handlePickedUp}
-            />
-          ) : (
-            <CustomButton
-              title={isDelivering ? 'Delivering...' : 'Mark as Delivered'}
-              style={[styles.deliverButton, isDelivering && styles.buttonDisabled]}
-              disabled={isDelivering}
-           //   loading={isDelivering}
-              onPress={handleDeliverOrder}
-            />
-          )}
-        </View>
+        {/* CTA button — hidden after delivery */}
+        {!isDelivered && (
+          <View style={[styles.ctaContainer, { bottom: vs(20) + insets.bottom }]}>
+            {!isPickedUp ? (
+              <CustomButton
+                title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
+                style={[styles.pickupButton, isPickingUp && styles.buttonDisabled]}
+                disabled={isPickingUp}
+                onPress={handlePickedUp}
+              />
+            ) : (
+              <CustomButton
+                title={isDelivering ? 'Delivering...' : 'Mark as Delivered'}
+                style={[styles.deliverButton, isDelivering && styles.buttonDisabled]}
+                disabled={isDelivering}
+                onPress={handleDeliverOrder}
+              />
+            )}
+          </View>
+        )}
       </BottomGradientBottomSheet>
 
       {/* ── Success Modal ─────────────────────────────────────────────────── */}
@@ -1103,26 +1347,38 @@ useEffect(() => {
         onClose={() => {}}
         onPress={() => {
           setShowSuccessModal(false);
-          //navigation.setOptions({ gestureEnabled: true });
-         navigation.navigate('Home');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
         }}
         title="Successfully Delivered!"
         message="Your order has been delivered successfully."
       />
+
+  <PermissionFlowModal
+        visible={showPermissionModal}
+        onComplete={() => setShowPermissionModal(false)}
+      />
+
     </View>
   );
 };
 
 export default CustomerInfoScreen;
 
+// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: Colors.white },
   container:     { flex: 1, backgroundColor: Colors.white },
 
-  // ── Map ──────────────────────────────────────────────────────────────────────
-  mapContainer: { marginBottom: ms(16) },
-  map:          { width: '100%', height: hp(38) },
-  fallback: {
+  // ── Map ────────────────────────────────────────────────────────────────────
+  mapContainer: {
+    width: '100%',
+    marginBottom: ms(16),
+  },
+  mapFallback: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#eef2f6',
@@ -1134,14 +1390,13 @@ const styles = StyleSheet.create({
     color: Colors.borderColor1,
   },
 
-  // ── Content ──────────────────────────────────────────────────────────────────
+  // ── Content ────────────────────────────────────────────────────────────────
   contentContainer: {
-    flex: 1,
     marginHorizontal: ms(16),
     gap: ms(12),
   },
 
-  // ── Outlet card ──────────────────────────────────────────────────────────────
+  // ── Outlet card ────────────────────────────────────────────────────────────
   outletCard: {
     backgroundColor: Colors.customerInfoCardBg,
     borderRadius: ms(14),
@@ -1153,6 +1408,11 @@ const styles = StyleSheet.create({
     gap: ms(12),
     marginBottom: vs(12),
   },
+  outletHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   markerImage: { width: ms(48), height: ms(48), borderRadius: ms(24) },
   outletIconContainer: {
     width: ms(48),
@@ -1162,17 +1422,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  outletInfo: { flex: 1 },
+  outletInfo:  { flex: 1 },
   outletLabel: {
     fontSize: fontSize(12),
     fontFamily: Typography.Regular.fontFamily,
     color: Colors.borderColor1,
   },
-      orderId: {
-      fontSize: fontSize(16),
-      color: Colors.black,
-      ...Typography.SemiBold,
-    },
+  orderId: {
+    fontSize: fontSize(16),
+    color: Colors.black,
+    ...Typography.SemiBold,
+  },
   outletName: {
     fontSize: fontSize(16),
     fontFamily: Typography.Bold.fontFamily,
@@ -1185,7 +1445,7 @@ const styles = StyleSheet.create({
     marginBottom: vs(12),
   },
 
-  // ── Info rows ────────────────────────────────────────────────────────────────
+  // ── Info rows ──────────────────────────────────────────────────────────────
   infoContainer: {
     backgroundColor: Colors.customerInfoCardBg,
     paddingHorizontal: ms(16),
@@ -1195,7 +1455,7 @@ const styles = StyleSheet.create({
   subtextStyle: { marginLeft: 0 },
   iconStyle:    { marginLeft: 5 },
 
-  // ── Total ────────────────────────────────────────────────────────────────────
+  // ── Total ──────────────────────────────────────────────────────────────────
   totalContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1216,7 +1476,7 @@ const styles = StyleSheet.create({
     color: Colors.black1,
   },
 
-  // ── Customer card ─────────────────────────────────────────────────────────────
+  // ── Customer card ──────────────────────────────────────────────────────────
   customerInfoCardStyle: { maxHeight: hp(20) },
   infoRowStyle: {
     backgroundColor: Colors.customerInfoCardBg,
@@ -1236,7 +1496,7 @@ const styles = StyleSheet.create({
     paddingBottom: ms(8),
   },
 
-  // ── Bottom Sheet content ──────────────────────────────────────────────────────
+  // ── Bottom sheet ───────────────────────────────────────────────────────────
   modalLine: {
     width: ms(50),
     height: vs(4),
@@ -1275,16 +1535,13 @@ const styles = StyleSheet.create({
     color: Colors.borderColor1,
   },
 
-  // ── CTA button — sits inline at bottom of scroll, always reachable ───────────
+  // ── CTA button ─────────────────────────────────────────────────────────────
   ctaContainer: {
-    // marginTop: vs(16),
-    
-    // paddingHorizontal: ms(16),
-     position: 'absolute',
-  bottom: vs(20),
-  left: 0,
-  right: 0,
-  paddingHorizontal: ms(16),
+    position: 'absolute',
+    bottom: vs(20),
+    left: 0,
+    right: 0,
+    paddingHorizontal: ms(16),
   },
   pickupButton: {
     backgroundColor: Colors.orange,

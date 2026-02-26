@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>186724523739-rokb183io2le340oaktot7002tjoeprb.apps.googleusercontent.com</string>
+	<string>186724523739-5mpq7ptaf1vrf2vpiks9oo5ssh8qdn1i.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.186724523739-rokb183io2le340oaktot7002tjoeprb</string>
+	<string>com.googleusercontent.apps.186724523739-5mpq7ptaf1vrf2vpiks9oo5ssh8qdn1i</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>186724523739-705lff6t0t205qf48i67jdrm338cf7o4.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.kep.runnerapp</string>
+	<string>com.kep.runner</string>
 	<key>PROJECT_ID</key>
 	<string>cabanaboy-ffa29</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:186724523739:ios:c20fa52b9d4270d67d76fe</string>
+	<string>1:186724523739:ios:d6b1a24a6175603a7d76fe</string>
 </dict>
 </plist>

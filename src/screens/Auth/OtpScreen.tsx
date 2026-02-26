@@ -11,6 +11,7 @@ import {
     Pressable,
     ActivityIndicator,
     AppState,
+    Dimensions,
 } from 'react-native';
 import GradientContainer from '../../components/Gradient/GradientContainer';
 import { vs, ms, wp, hp, fontSize, s } from '../../utils/responsive';
@@ -26,7 +27,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken, setToken } from '../../utils/token'
 import { logger } from '../../utils/logger';
 import { commonStyle } from '../../styles/CommonStyles';
-
+  const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
 const OtpScreen = ({ navigation, route }: any) => {
     const { isRegister = false, email, password, isforgot = false } = route.params || {};
     const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -231,7 +233,7 @@ const OtpScreen = ({ navigation, route }: any) => {
                         style={styles.bgImageStyle}
                     />
 
-                    <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: hp(54), }]}>
+                    <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: CARD_HEIGHT, }]}>
                         <Text style={commonStyle.welcomestyle}>
                             {isRegister ? "Verification code!" : "Check your email"}
                         </Text>

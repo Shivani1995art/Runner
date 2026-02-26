@@ -52,7 +52,7 @@ import { useBootstrap } from '../hooks/useBootstrap';
 
 const Routes = () => {
     const { isLogin } = useContext(AuthContext);
-    const { hasSeenOnboarding, isBootstrapping } = useBootstrap();
+     const { hasSeenOnboarding, isBootstrapping, recheckOnboarding } = useBootstrap();
       
     // Minimum splash display time to avoid flicker
     const [minSplashDone, setMinSplashDone] = useState(false);
@@ -69,6 +69,13 @@ const Routes = () => {
         }, 100); // Minimum 1.5s splash time
         return () => clearTimeout(timer);
     }, []);
+
+
+    useEffect(() => {
+        if (isLogin === false) {
+            recheckOnboarding();
+        }
+    }, [isLogin]);
 
     // Show splash while:
     // 1. Auth state is still loading (isLogin === null)

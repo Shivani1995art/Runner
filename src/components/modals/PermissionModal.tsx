@@ -64,12 +64,12 @@ const PermissionModal = ({
     >
       <View style={styles.overlay}>
 
-        <BlurView
+        {/* <BlurView
           style={StyleSheet.absoluteFill}
           blurType="xlight"
           blurAmount={5}
           reducedTransparencyFallbackColor="rgba(174, 24, 24, 0.5)"
-        />
+        /> */}
 
         <Animated.View
           style={[
@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: "flex-end",
+    backgroundColor: 'rgba(255, 255, 255, 0.7)'
   },
   containerWrapper: {
     width: "100%",

@@ -193,7 +193,7 @@ export const useAuth = () => {
   // ── logoutUser ──────────────────────────────────────────────────────────────
   // res: { success, message }
   // ─────────────────────────────────────────────────────────────────────────────
-  const logoutUser = async (token: string, platform: 'ios' | 'android') => {
+  const logoutUser = async (token: string, platform: 'runner_ios' | 'runner_android') => {
     try {
       show();
       logger.log('logoutUser token:', token);
@@ -215,10 +215,11 @@ export const useAuth = () => {
   };
 const saveToken = async (
   token: string,
-  platform: 'ios' | 'android'
+ platform: 'runner_ios' | 'runner_android'
 ) => {
   try {
-    logger.log('saveToken token:', token);
+    // {"device_token":"DEVICE123" , "platform" : "runner_ios or runner_android"}
+   // logger.log('saveToken token:', token);
     logger.log('saveToken platform:', platform);
 
     const response = await saveTokenToBackend({
@@ -226,7 +227,7 @@ const saveToken = async (
       platform,
     });
 
-    console.log('saveTokenToBackend response:', response);
+   // console.log('saveTokenToBackend response:', response);
   } catch (error) {
     console.log('Error saving token:', error);
   }
@@ -239,5 +240,6 @@ const saveToken = async (
     verifyForgotOtpAuth,
     setNewPasswordAuth,
     logoutUser,
+    saveToken
   };
 };

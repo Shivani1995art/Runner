@@ -44,13 +44,13 @@ const CustomHeaderHome: React.FC<CustomHeaderProps> = ({
             <Text style={styles.headerLocation}>{location}</Text>
           </View>
         </View>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.notificationButton}
           onPress={onNotificationPress}
         >
           <View style={styles.notificationBadge} />
           {NotificationIcon}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );
