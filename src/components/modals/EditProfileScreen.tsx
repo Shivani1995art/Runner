@@ -281,14 +281,13 @@ const handleSubmit = async () => {
     // 4. API Call - FIXED FOR ANDROID
     const response = await apiClient.put('/api/runner/auth/profile', uploadData, {
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'multipart/form-data',
-      },
+          'Content-Type': 'multipart/form-data',
+        },
       // THIS IS THE CRITICAL FIX:
       // Prevent Axios from converting FormData into a plain object
-      transformRequest: (data) => {
-        return data; 
-      },
+      // transformRequest: (data) => {
+      //   return data; 
+      // },
     });
 
     logger.log('Profile update response:', response.data);

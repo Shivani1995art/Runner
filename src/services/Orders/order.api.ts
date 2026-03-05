@@ -35,7 +35,7 @@ export const acceptOrder = async (orderId: number) => {
 export const getOrderById = async (orderId: number) => {
   logger.log('getOrderById orderId:', orderId);
   const { data } = await apiClient.get(ENDPOINTS.RUNNER_ORDERS.ORDER_BY_ID(orderId));
-  logger.log('getOrderById data:', data);
+  //logger.log('getOrderById data:', data);
   return data;
 };
 
@@ -44,7 +44,7 @@ export const pickedOrder = async (orderId: number) => {
   const { data } = await apiClient.post(
     ENDPOINTS.RUNNER_ORDERS.PICKED(orderId)
   );
-  logger.log('pickedOrder data:', data);
+ // logger.log('pickedOrder data:', data);
   return data;
 };
 
@@ -54,6 +54,6 @@ export const delivered = async (orderId: number) => {
   const { data } = await apiClient.post(
     ENDPOINTS.RUNNER_ORDERS.DELIVERED(orderId)
   );
-  logger.log('delivered data:', data);
+//  logger.log('delivered data:', data);
   return data;
 };

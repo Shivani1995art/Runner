@@ -48,41 +48,21 @@ import SplashScreen from '../screens/SplashScreen/SplashScreen';
 import { AuthContext } from '../context/AuthContext';
 import { logger } from '../utils/logger';
 import { useBootstrap } from '../hooks/useBootstrap';
+import MainScreenNavigationWithNotifications from './Main/MainScreenNavigation';
 
 
 const Routes = () => {
     const { isLogin } = useContext(AuthContext);
-     const { hasSeenOnboarding, isBootstrapping, recheckOnboarding } = useBootstrap();
-      
-    // Minimum splash display time to avoid flicker
+    const { hasSeenOnboarding, isBootstrapping } = useBootstrap();
     const [minSplashDone, setMinSplashDone] = useState(false);
 
-    logger.log('===hasSeenOnboarding=====', hasSeenOnboarding);
-    logger.log('===isLogin=====', isLogin);
-    logger.log('===isBootstrapping=====', isBootstrapping);
-
-
-
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setMinSplashDone(true);
-        }, 100); // Minimum 1.5s splash time
+        const timer = setTimeout(() => setMinSplashDone(true), 100);
         return () => clearTimeout(timer);
     }, []);
 
-
-    useEffect(() => {
-        if (isLogin === false) {
-            recheckOnboarding();
-        }
-    }, [isLogin]);
-
-    // Show splash while:
-    // 1. Auth state is still loading (isLogin === null)
-    // 2. Bootstrap is still running (isBootstrapping === true)
-    // 3. Minimum splash duration hasn't passed (minSplashDone === false)
     const isLoading = isLogin === null || isBootstrapping || !minSplashDone;
-
+logger.log('isLogin', isLogin);
     if (isLoading) {
         return <SplashScreen />;
     }
@@ -90,7 +70,7 @@ const Routes = () => {
     return (
         <NavigationContainer>
             {isLogin 
-                ? <MainScreenNavigation /> 
+                ? <MainScreenNavigationWithNotifications />  // ← Use this
                 : <AuthNavigation hasSeenOnboarding={hasSeenOnboarding} />
             }
         </NavigationContainer>

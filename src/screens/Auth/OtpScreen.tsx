@@ -119,19 +119,33 @@ const OtpScreen = ({ navigation, route }: any) => {
         const remainingSeconds = seconds % 60;
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
-    const handleChange = (text: string, index: number) => {
-        const newOtp = [...otp];
-        newOtp[index] = text;
-        setOtp(newOtp);
+   
+   const handleChange = (text: string, index: number) => {
+    // Allow only numbers
+    if (!/^\d?$/.test(text)) return;
 
-        if (text && index < OTP_LENGTH - 1) {
-            inputRefs.current[index + 1].current?.focus();
-        }
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
 
-        if (!text && index > 0) {
-            inputRefs.current[index - 1].current?.focus();
-        }
-    };
+    // Move forward only when typing
+    if (text && index < OTP_LENGTH - 1) {
+        inputRefs.current[index + 1]?.current?.focus();
+    }
+};
+    // const handleChange = (text: string, index: number) => {
+    //     const newOtp = [...otp];
+    //     newOtp[index] = text;
+    //     setOtp(newOtp);
+
+    //     if (text && index < OTP_LENGTH - 1) {
+    //         inputRefs.current[index + 1].current?.focus();
+    //     }
+
+    //     if (!text && index > 0) {
+    //         inputRefs.current[index - 1].current?.focus();
+    //     }
+    // };
     logger.log("isfrom forgot", isforgot)
     const finalOTP = otp.join("");
     logger.log("final otp", typeof (finalOTP), finalOTP)
@@ -241,8 +255,11 @@ const OtpScreen = ({ navigation, route }: any) => {
                         <Text style={[commonStyle.headingStyle, { paddingBottom: vs(20), }]}>
                             {isRegister
                                 ? "We’ve sent you a code! Open your email to continue the vibe"
-                                : "We sent a reset link to your email address. Enter the 4-digit code that was mentioned in the email."}
+                                : "We’ve sent you a code to your email address. Enter the 4-digit code that was mentioned in the email."}
                         </Text>
+                       
+                         
+                       
                         <View style={[styles.otpContainer, { flexDirection: "row" }]}>
                             {otp.map((item, index) => (
                                 <TextInput
@@ -254,6 +271,13 @@ const OtpScreen = ({ navigation, route }: any) => {
                                     placeholder='-'
                                     placeholderTextColor={Colors.borderColor1}
                                     keyboardType="number-pad"
+                                    onKeyPress={({ nativeEvent }) => {
+                                        if (nativeEvent.key === 'Backspace') {
+                                            if (!otp[index] && index > 0) {
+                                                inputRefs.current[index - 1]?.current?.focus();
+                                            }
+                                        }
+                                    }}
                                     style={[
                                         styles.otpBox,
                                         {

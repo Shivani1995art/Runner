@@ -55,7 +55,7 @@ const BottomGradientModal = ({
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={[
           StyleSheet.absoluteFill,
-          { backgroundColor: 'rgba(255, 255, 255, 0.7)' }
+          { backgroundColor: '#000000dc' }
         ]} />
       </TouchableWithoutFeedback>
 

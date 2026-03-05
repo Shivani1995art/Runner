@@ -18,9 +18,15 @@ import { AuthContext } from '../../context/AuthContext';
 import Toast from 'react-native-toast-message';
 import { useAppPermissions } from '../../hooks/useAppPermissions';
 import PermissionFlowModal from '../../components/modals/PermissionFlowModal';
+import { navBarHeight } from '../../utils/NavBarHeight';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.58;
+const CARD_HEIGHT = Math.max(
+  520,
+  Math.floor(Dimensions.get('window').height * 0.55)
+);
+logger.log('CARD_HEIGHT', CARD_HEIGHT);
+
 const LoginScreen = ({ navigation }) => {
     const [showrestroui, setShowrestroui] = useState(false);
     const passwordRef = useRef(null);
@@ -108,7 +114,7 @@ const LoginScreen = ({ navigation }) => {
             >
 
           <StatusBar
-                    barStyle="dark-content"
+                    barStyle="light-content"
                     backgroundColor="transparent"
                     translucent
                 />
@@ -132,16 +138,18 @@ const LoginScreen = ({ navigation }) => {
     paddingBottom: Platform.OS === 'android' ? 0 : 0,
   }}
 >
-                     <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: hp(62), }]}>
+                     <GradientContainer borderRadius={ms(50)} style={[commonStyle.customGradient, { height: CARD_HEIGHT, }]}>
                         <Text style={styles.welcomestyle}>Welcome Back!</Text>
-                        <Text style={styles.headingStyle}>let’s make today a chill one</Text>
+                      <Text style={styles.headingStyle}>
+  Easy day ahead{"\n"}Sign in and get moving
+</Text>
 
                         <CustomTextInput
                             value={userName}
                             leftIcon={<Personsvg />}
-                            placeholder='Enter User Name'
+                            placeholder='Enter Email'
                             style={styles.textInputStyle}
-                            label='Enter User Name'
+                          //  label='Enter Email'
                             onChangeText={setUserName}
                             returnKeyType="next"
                             blurOnSubmit={false}
@@ -154,7 +162,7 @@ const LoginScreen = ({ navigation }) => {
                             leftIcon={<Locksvg />}
                             placeholder='Enter Password'
                             style={styles.textInputStyle}
-                            label='Password'
+                          //  label='Password'
                             secureTextEntry={secure}
                             rightIcon={
                                 <TouchableOpacity onPress={() => setSecure(!secure)}>
@@ -165,7 +173,9 @@ const LoginScreen = ({ navigation }) => {
                             returnKeyType="done"
                             onSubmitEditing={!isFormValid ? () => { } : Keyboard.dismiss}
                         />
-                        <Text style={styles.forgotpassstyle} onPress={() => navigation.navigate('ForgotPassword')} >Forgot Password ?</Text>
+                        <Text style={styles.forgotpassstyle} 
+                        onPress={() => navigation.navigate('ForgotPassword')}
+                        >Forgot Password ?</Text>
                         <View style={{ justifyContent: 'space-between', gap: 10 }}>
                             <CustomButton
                                 title="Sign in"
@@ -229,7 +239,7 @@ const styles = StyleSheet.create({
 
 
     },
-    headingStyle: { fontSize: fontSize(16), color: Colors.borderColor1, marginTop: 10, marginBottom: 10 },
+    headingStyle: { fontSize: fontSize(16), color: Colors.borderColor1, marginTop: 10, marginBottom: 10 ,textAlign:'center'},
     subheadingStyle: { fontSize: fontSize(14), color: Colors.borderColor1 },
     textInput: {
         width: wp(80),

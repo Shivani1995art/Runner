@@ -439,7 +439,7 @@ logger.log(orderID)
              
                 {/* <Text style={{color:Colors.black1}}>#{orderID}</Text> */}
            
-              <Text style={styles.rightTextstyle}>#{orderID} {rightText}</Text>
+              <Text style={styles.rightTextstyle}>#{orderID}</Text>
               </View>
          
           ) : null}
@@ -469,7 +469,8 @@ logger.log(orderID)
       )}
 
       {/* ── Common content ───────────────────────────────────────────────── */}
-      <View style={styles.orderCardHeader}>
+      {showOrderButton && (
+ <View style={styles.orderCardHeader}>
         <View style={styles.distanceContainer}>
           <View style={styles.labelWithIcon}>
             <Text style={styles.distanceLabel}>Distance</Text>
@@ -478,10 +479,13 @@ logger.log(orderID)
           <Text style={styles.distanceValue}>{distance}</Text>
         </View>
       </View>
+        )
+      }
+     
 
       <View style={showOrderButton ? styles.locationContainer : undefined}>
         <View style={styles.labelWithIcon}>
-          <Text style={styles.locationLabel}>Location</Text>
+          <Text style={styles.locationLabel}>Deliver to</Text>
           <MapPin color={Colors.borderColor1} size={ms(14)} strokeWidth={2} />
         </View>
         <View style={locationUnderline ? styles.locationUnderline : undefined}>
@@ -491,7 +495,7 @@ logger.log(orderID)
 
       {showOrderButton && (
         <TouchableOpacity style={styles.acceptButton} onPress={onAccept}>
-          <Text style={styles.acceptButtonText}>Order Details</Text>
+          <Text style={styles.acceptButtonText}>View Details</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -523,11 +527,11 @@ const styles = StyleSheet.create({
     gap: ms(6),
   },
   rightTextstyle: {
-    marginVertical: vs(8),
+    marginVertical: vs(10),
     fontSize: fontSize(16),
     color: Colors.black2,
-    fontFamily: Typography.Bold.fontFamily,
-    fontWeight: '700',
+     ...Typography.Bold,
+    //fontWeight: '700',
     flex: 1,
   },
 

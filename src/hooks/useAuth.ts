@@ -158,7 +158,7 @@ export const useAuth = () => {
       logger.log('verifyForgotOtpAuth res:', res);
 
       if (res?.success) {
-        return res.data;
+        return res;
       }
     } catch (error) {
       logger.error('verifyForgotOtp error:', error);
@@ -220,12 +220,15 @@ const saveToken = async (
   try {
     // {"device_token":"DEVICE123" , "platform" : "runner_ios or runner_android"}
    // logger.log('saveToken token:', token);
-    logger.log('saveToken platform:', platform);
+    
 
     const response = await saveTokenToBackend({
       device_token: token,
       platform,
     });
+    if(response.success){
+      logger.log('saveToken platform:', platform);
+    }
 
    // console.log('saveTokenToBackend response:', response);
   } catch (error) {

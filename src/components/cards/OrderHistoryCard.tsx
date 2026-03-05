@@ -106,9 +106,9 @@ const OrderHistoryCard = () => {
   }, []);
 
   const handleLoadMore = () => {
-    // if (!loadingMore && currentPage < totalPages) {
-    //   fetchOrders(currentPage + 1, true);
-    // }
+    if (!loadingMore && currentPage < totalPages) {
+      fetchOrders(currentPage + 1, true);
+    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -140,6 +140,37 @@ const OrderHistoryCard = () => {
       minute: '2-digit',
     });
   };
+const getDeliveryStatusText = (order: any) => {
+  const deliveredAt = order?.timestamps?.delivered_at;
+  const estimatedTime = order?.timestamps?.estimated_delivery_time;
+
+  if (!deliveredAt || !estimatedTime) return null;
+
+  const delivered = new Date(deliveredAt).getTime();
+  const estimated = new Date(estimatedTime).getTime();
+
+  const diffMinutes = Math.floor((delivered - estimated) / 60000);
+
+  // ✅ On Time or Early
+  if (diffMinutes <= 0) {
+    return 'Delivered On Time';
+  }
+
+  // ✅ Less than 60 minutes
+  if (diffMinutes < 60) {
+    return `Delayed by ${diffMinutes} min`;
+  }
+
+  // ✅ More than 60 minutes → convert to hr + min
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+
+  if (minutes === 0) {
+    return `Delayed by ${hours} hr`;
+  }
+
+  return `Delayed by ${hours} hr ${minutes} min`;
+};
 
   const getTotalPrice = (items: OrderItem[]) => {
     const total = items.reduce((sum, item) => {
@@ -202,18 +233,18 @@ const OrderHistoryCard = () => {
           <TouchableOpacity
             style={styles.cardContainer}
             activeOpacity={0.85}
-            // onPress={() =>
-            //   navigation.navigate('OrderHistoryDetails', {
-            //     orderId: order.order_id,
-            //     items: order.items,
-            //     restaurant: {
-            //       name: order.outlet.name,
-            //       subtitle: `Customer: ${order.customer.name}`,
-            //       image: order.outlet.image_url,
-            //       totalPrice: getTotalPrice(order.items),
-            //     },
-            //   })
-            // }
+            onPress={() =>
+              navigation.navigate('OrderHistoryDetails', {
+                orderId: order.order_id,
+                items: order.items,
+                restaurant: {
+                  name: order.outlet.name,
+                  subtitle: `Customer: ${order.customer.name}`,
+                  image: order.outlet.image_url,
+                  totalPrice: getTotalPrice(order.items),
+                },
+              })
+            }
           >
             {/* Header */}
             <OrderHeaderCard
@@ -257,14 +288,16 @@ const OrderHistoryCard = () => {
 
             {/* Footer */}
             <View style={styles.footer}>
-              <Text style={[styles.statusBadge, { color: getStatusColor(order.status) }]}>
+              {/* <Text style={[styles.statusBadge, { color: getStatusColor(order.status) }]}>
                 ● {getStatusLabel(order.status)}
-              </Text>
-              {order.timestamps.delivered_at && (
+              </Text> */}
+             
                 <Text style={styles.infotext}>
-                  {formatDate(order.timestamps.delivered_at)}
+
+              {getDeliveryStatusText(order)}
+                
                 </Text>
-              )}
+               
             </View>
           </TouchableOpacity>
         );
@@ -325,6 +358,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: ms(14),
     marginTop: vs(6),
+    alignContent: 'center',
   },
   statusBadge: {
     fontSize: ms(12),
@@ -332,10 +366,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   infotext: {
+    width: '100%',
     fontSize: ms(11),
     color: Colors.borderColor1,
     fontFamily: Typography.Medium.fontFamily,
     fontWeight: '500',
+    justifyContent: 'center',
+    textAlign: 'center',
   },
   dottedLine: {
     borderBottomWidth: 1.4,

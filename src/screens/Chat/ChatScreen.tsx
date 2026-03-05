@@ -1339,7 +1339,7 @@ navigation.navigate('CustomerInfoScreen');
   if (loading) {//isFetchingOrder || 
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
-        <ActivityIndicator size="large" color="#00D46A" />
+        <ActivityIndicator size="large" color={Colors.blue} />
         <Text style={styles.loadingText}>
           {isFetchingOrder ? 'Loading customer info...' : 'Loading chat...'}
         </Text>
@@ -1531,7 +1531,7 @@ const styles = StyleSheet.create({
     width: ms(40),
     height: ms(40),
     borderRadius: ms(20),
-    backgroundColor: Colors.green2,
+    backgroundColor: Colors.blue,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1546,12 +1546,12 @@ quickBadge: {
   paddingVertical: vs(6),
   borderRadius: ms(20),
   marginRight: ms(10),
-  borderColor: Colors.green2,
+  borderColor: Colors.blue,
   borderWidth: ms(1.5),
 },
 
 quickText: {
-  color: Colors.green2,
+  color: Colors.blue,
   fontSize: ms(13),
   fontFamily: Typography.Medium.fontFamily,
 },

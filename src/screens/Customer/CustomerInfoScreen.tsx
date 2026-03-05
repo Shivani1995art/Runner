@@ -784,11 +784,20 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/ToastProvider';
 import LocationService from '../../hooks/LocationModule.android';
 import { useUserLocation } from '../../hooks/useUserLocation';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import ChatService from '../../services/Chat/ChatService';
 import { makePhoneCall } from '../../utils/phoneCall';
 import PermissionFlowModal from '../../components/modals/PermissionFlowModal';
 import { useAppPermissions } from '../../hooks/useAppPermissions';
+
+import { Dimensions } from 'react-native';
+import RunnerOrderItemsModal from '../../components/modals/RunnerOrderItemsModalProps';
+import { SOCKET_EVENTS } from '../../services/Socket/SocketEvents';
+import { useOrderSocket } from '../../hooks/useSocketListener';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const sheetMaxHeight = 0.20;
+const bottomSheetHeight = SCREEN_HEIGHT * sheetMaxHeight;
 
 // ── Helper: safely parse a coordinate value ───────────────────────────────────
 const safeCoord = (val: any): number | null => {
@@ -798,6 +807,9 @@ const safeCoord = (val: any): number | null => {
 
 // ── CustomerInfoScreen ────────────────────────────────────────────────────────
 const CustomerInfoScreen = ({ navigation, route }: any) => {
+
+    const isFocused = useIsFocused();
+
 // Inside your component:
 const insets = useSafeAreaInsets();
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -808,6 +820,8 @@ const [lastMessage, setLastMessage]   = useState<string | undefined>(undefined);
 // 2️⃣  ADD a ref to hold the chat unsubscribe function:
 const chatUnsubscribeRef = useRef<(() => void) | null>(null);
 
+ // ✅ ADD THIS: Ref to track if action is performed by current user
+  const isPerformingActionRef = useRef(false);
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [showSlideModal, setShowSlideModal]     = useState(true);
@@ -863,12 +877,12 @@ const chatUnsubscribeRef = useRef<(() => void) | null>(null);
   const customerId        = order?.User?.id           ?? '—';
 
   const orderId      = order?.id            ?? '—';
-  const customerNote = order?.customer_note ?? '';
+  const customerNote = order?.delivery_text ?? '';
   const orderLines   = order?.OrderLines    ?? [];
   const totalCents   = parseInt(order?.total_cents ?? '0', 10);
   const currency     = order?.currency      ?? 'USD';
 
-  const deliveryLocation = order?.delivery_text || outletAddress || 'Resort pickup';
+  const deliveryLocation = order?.delivery_address || 'No Address';
 
   // Target switches between outlet (before pickup) and customer (after pickup)
   const targetLat = isPickedUp ? deliveryLat : outletLat;
@@ -889,50 +903,50 @@ const chatUnsubscribeRef = useRef<(() => void) | null>(null);
 
 // 3️⃣  ADD this useFocusEffect BELOW your existing useFocusEffect (order-refresh one).
 //     It subscribes to the chat room for this order so the badge updates in real-time.
-useFocusEffect(
-  useCallback(() => {
-    if (!orderId || orderId === '—' || !user?.id) return;
+// useFocusEffect(
+//   useCallback(() => {
+//     if (!orderId || orderId === '—' || !user?.id) return;
 
-    let unsubscribe: (() => void) | null = null;
+//     let unsubscribe: (() => void) | null = null;
 
-    const subscribeToChat = async () => {
-      try {
-        // Get the chat room for this order (don't create — just fetch if exists)
-        const chatRoomData = await ChatService.getOrCreateChatRoom(
-          String(orderId),
-          String(customerId),
-          customerName,
-          String(user.id),   // runnerId not needed — room is keyed by orderId
-          user.display_name,
-        );
+//     const subscribeToChat = async () => {
+//       try {
+//         // Get the chat room for this order (don't create — just fetch if exists)
+//         const chatRoomData = await ChatService.getOrCreateChatRoom(
+//           String(orderId),
+//           String(customerId),
+//           customerName,
+//           String(user.id),   // runnerId not needed — room is keyed by orderId
+//           user.display_name,
+//         );
 
-        unsubscribe = ChatService.getMessages(chatRoomData.id, (messages) => {
-          // Count messages not sent by runner (i.e. from customer) that are unread
-          const unread = messages.filter(
-            (m) => m.senderId !== user.id && !m.read
-          ).length;
+//         unsubscribe = ChatService.getMessages(chatRoomData.id, (messages) => {
+//           // Count messages not sent by runner (i.e. from customer) that are unread
+//           const unread = messages.filter(
+//             (m) => m.senderId !== user.id && !m.read
+//           ).length;
 
-          const latest = messages[messages.length - 1];
+//           const latest = messages[messages.length - 1];
 
-          setUnreadCount(unread);
-          setLastMessage(latest?.senderId !== user.id ? latest?.text : undefined);
-        });
+//           setUnreadCount(unread);
+//           setLastMessage(latest?.senderId !== user.id ? latest?.text : undefined);
+//         });
 
-        chatUnsubscribeRef.current = unsubscribe;
-      } catch (err) {
-        // Chat room may not exist yet — that's fine, ignore silently
-      }
-    };
+//         chatUnsubscribeRef.current = unsubscribe;
+//       } catch (err) {
+//         // Chat room may not exist yet — that's fine, ignore silently
+//       }
+//     };
 
-   // subscribeToChat();
+//    // subscribeToChat();
 
-    // Cleanup on blur
-    return () => {
-      unsubscribe?.();
-      chatUnsubscribeRef.current = null;
-    };
-  }, [orderId, user?.id, customerName]),
-);
+//     // Cleanup on blur
+//     return () => {
+//       unsubscribe?.();
+//       chatUnsubscribeRef.current = null;
+//     };
+//   }, [orderId, user?.id, customerName]),
+// );
 
 // ── Refresh order when screen comes back into focus (e.g. returning from Chat) ─
 useFocusEffect(
@@ -1033,19 +1047,126 @@ const loadLocationSafely = async (): Promise<{ latitude: number; longitude: numb
     return unsubscribe;
   }, [navigation, isDelivered, isNavigatingAway]);
 
+
+
+
+  // ✅ ADD THIS: Socket listener for order status changes
+  useOrderSocket((event, data) => {
+
+
+    if (!isFocused) return;
+
+    // ✅ CORRECTED: Use correct field names from socket data
+    const socketOrderId = data.orderId || data.order_id || data.id;
+    const socketRunnerId = data.runnerId || data.runner_id;
+    const currentOrderId = order?.id;
+    const currentUserId = user?.id;
+
+    logger.log('📡 Order socket event in CustomerInfo:',event, {
+      socketOrderId,
+      socketRunnerId,
+      currentOrderId,
+      currentUserId,
+      data
+    });
+
+    // Only handle events for the current order
+    if (socketOrderId !== currentOrderId) {
+      logger.log('⏭️ Event is for different order, ignoring');
+      return;
+    }
+
+    // ✅ Skip toast if this action was performed by current user
+    if (socketRunnerId === currentUserId && isPerformingActionRef.current) {
+      logger.log('⏭️ Skipping socket action - performed by current user');
+      isPerformingActionRef.current = false;
+      return;
+    }
+
+    // ✅ Handle ORDER_PICKED_UP event
+    if (event === SOCKET_EVENTS.ORDER_PICKED_UP) {
+      logger.log('📦 Order picked up via socket:', socketOrderId);
+      
+      if (!isDeliveredRef.current) {
+        // Update order status in state
+        setOrder((prev: any) => ({
+          ...prev,
+          status: 'picked_up',
+        }));
+
+        // Only show toast if not performed by current user
+        if (socketRunnerId !== currentUserId) {
+          toast?.('Order marked as picked up', 'success', 2000);
+        }
+        
+        // Optionally refresh order details
+        if (currentOrderId) {
+          fetchOrderDetail(Number(currentOrderId));
+        }
+      }
+    }
+
+    // ✅ Handle ORDER_DELIVERED event
+    if (event === SOCKET_EVENTS.ORDER_DELIVERED) {
+      logger.log('✅ Order delivered via socket:', socketOrderId);
+      
+      // Freeze delivery state
+      isDeliveredRef.current = true;
+      setIsNavigatingAway(true);
+      setIsDelivered(true);
+      setShowSlideModal(false);
+      
+      // Only show toast if not performed by current user
+      if (socketRunnerId !== currentUserId) {
+        toast?.('Order delivered successfully!', 'success', 2000);
+      }
+      
+      // Show success modal
+      setTimeout(() => {
+        setShowSuccessModal(true);
+      }, 500);
+    }
+
+    // ✅ Handle ORDER_READY event (if runner hasn't picked up yet)
+    if (event === SOCKET_EVENTS.ORDER_READY) {
+      logger.log('🍕 Order ready for pickup via socket:', socketOrderId);
+      fetchOrderDetail(Number(currentOrderId));
+      // Only show if order hasn't been picked up yet
+      // if (order?.status === 'assigned' || order?.status === 'accepted') {
+      //   toast?.('Order is ready for pickup!', 'success', 3000);
+        
+      //   // Refresh order details
+      //   if (currentOrderId) {
+      //     fetchOrderDetail(Number(currentOrderId));
+      //   }
+      // }
+    }
+  });
+
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handlePickedUp = async () => {
     try {
       setIsPickingUp(true);
+
+       // ✅ Set flag to prevent duplicate socket toast
+      isPerformingActionRef.current = true;
+
       const currentOrderId = order?.id;
       const res = await pickedOrder(currentOrderId);
       // ✅ Guard: don't refresh order after delivery
       if (res?.success && !isDeliveredRef.current) {
         await fetchOrderDetail(Number(currentOrderId));
       }
+
+ // ✅ Reset flag after a delay
+      setTimeout(() => {
+        isPerformingActionRef.current = false;
+      }, 2000);
+
     } catch (e) {
       logger.log('handlePickedUp error', e);
+      isPerformingActionRef.current = false;
     } finally {
       setIsPickingUp(false);
     }
@@ -1054,6 +1175,11 @@ const loadLocationSafely = async (): Promise<{ latitude: number; longitude: numb
   const handleDeliverOrder = async () => {
     try {
       setIsDelivering(true);
+
+
+       // ✅ Set flag to prevent duplicate socket toast
+      isPerformingActionRef.current = true;
+
       const currentOrderId = order?.id;
       const res = await deliverOrder(Number(currentOrderId));
       if (res?.success) {
@@ -1064,8 +1190,15 @@ const loadLocationSafely = async (): Promise<{ latitude: number; longitude: numb
         setShowSlideModal(false);   // ← hide bottom sheet immediately
         setShowSuccessModal(true);
       }
+
+       // ✅ Reset flag after a delay
+      setTimeout(() => {
+        isPerformingActionRef.current = false;
+      }, 2000);
+
     } catch (e) {
       logger.log('handleDeliverOrder error', e);
+      isPerformingActionRef.current = false;
     } finally {
       setIsDelivering(false);
     }
@@ -1104,22 +1237,27 @@ const handleChat = () => {
 
   const itemCount = orderLines?.length ?? 0;
   const sheetMaxHeight =
-    itemCount === 0 ? 0.20
-    : itemCount === 1 ? 0.33
-    : itemCount === 2 ? 0.40
-    : itemCount === 3 ? 0.45
+    itemCount === 0 ? 0.10
+    : itemCount === 1 ? 0.15
+    : itemCount === 2 ? 0.20
+    : itemCount === 3 ? 0.25
     : itemCount <= 5  ? 0.55
-    : 0.65;
+    : 0.55;
 
-  // List height inside bottom sheet — caps so button stays visible
-  const listHeight = itemCount <= 2 ? undefined : vs(200);
+
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.mainContainer}>
 
       {/* ── Main scroll ───────────────────────────────────────────────────── */}
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+<ScrollView
+  style={{ flex: 1 }}
+  contentContainerStyle={{
+    paddingBottom: bottomSheetHeight,
+  }}
+  showsVerticalScrollIndicator={false}
+>
 
         {/* ── Map ─────────────────────────────────────────────────────────── */}
         <View style={[styles.mapContainer, { height: MAP_HEIGHT }]}>
@@ -1186,9 +1324,19 @@ const handleChat = () => {
                   subtitleStyle={styles.subtextStyle}
                   iconStyle={styles.iconStyle}
                 />
+
+  <InfoRow
+                  Icon={<Map size={16} color={Colors.borderColor1} />}
+                  title="Distance"
+                  subtitle={distance}
+                  IconPosition="right"
+                  subtitleStyle={styles.subtextStyle}
+                  iconStyle={styles.iconStyle}
+                />
+
               </View>
 
-              <View style={styles.infoContainer}>
+              {/* <View style={styles.infoContainer}>
                 <InfoRow
                   Icon={<Map size={16} color={Colors.borderColor1} />}
                   title="Distance"
@@ -1197,14 +1345,14 @@ const handleChat = () => {
                   subtitleStyle={styles.subtextStyle}
                   iconStyle={styles.iconStyle}
                 />
-              </View>
+              </View> */}
 
-              <View style={styles.totalContainer}>
+              {/* <View style={styles.totalContainer}>
                 <Text style={styles.totalLabel}>Order Total</Text>
                 <Text style={styles.totalValue}>
                   ${(totalCents / 100).toFixed(2)} {currency}
                 </Text>
-              </View>
+              </View> */}
             </>
           )}
 
@@ -1225,13 +1373,32 @@ const handleChat = () => {
               />
 
               <View style={styles.infoRowStyle}>
-                <Text style={styles.titleNote}>Customer Note</Text>
-                <Text style={styles.descriptionTextStyle}>
-                  {customerNote || 'No special instructions'}
-                </Text>
+            {customerNote ? (
+  <>
+    <Text style={styles.titleNote}>Customer Note</Text>
+    <Text style={styles.descriptionTextStyle}>
+      {customerNote}
+    </Text>
+ </>
+) : (
+ <View style={{marginTop:hp(1)}}/>
+)}
+              
+
+
+ <InfoRow
+                 // Icon={<Map size={16} color={Colors.borderColor1} />}
+                  title="Location"
+                  subtitle={deliveryLocation}
+                  Icon={<MapPin size={16} color={Colors.borderColor1} />}
+                  IconPosition="right"
+                  subtitleStyle={styles.subtextStyle}
+                  iconStyle={styles.iconStyle}
+                />
+
               </View>
 
-              <View style={styles.infoContainer}>
+              {/* <View style={styles.infoContainer}>
                 <InfoRow
                   Icon={<Map size={16} color={Colors.borderColor1} />}
                   title="Distance"
@@ -1248,97 +1415,39 @@ const handleChat = () => {
                   subtitleStyle={styles.subtextStyle}
                   iconStyle={styles.iconStyle}
                 />
-              </View>
+              </View> */}
 
-              <View style={styles.totalContainer}>
-                <Text style={styles.totalLabel}>Order Total</Text>
+              {/* <View style={styles.totalContainer}>
+                <Text style={styles.totalLabel}>Order Total dfgdfgd</Text>
                 <Text style={styles.totalValue}>
                   ${(totalCents / 100).toFixed(2)} {currency}
                 </Text>
-              </View>
+              </View> */}
             </>
           )}
         </View>
 
         {/* Space so content isn't hidden behind bottom sheet */}
-        <View style={{ height: hp(sheetMaxHeight * 100 + 5) }} />
+        {/* <View style={{ height: hp(sheetMaxHeight * 100 + 5) }} /> */}
       </ScrollView>
 
       {/* ── Bottom Sheet ──────────────────────────────────────────────────── */}
-      <BottomGradientBottomSheet
-        visible={showSlideModal && !isDelivered}  // ✅ hide on delivery
-        onClose={() => setShowSlideModal(false)}
-        maxHeightPercentage={sheetMaxHeight}
-        minHeightPercentage={0.15}
-      >
-        {/* Drag handle */}
-        <View style={styles.modalLine} />
+     
 
-        {/* Section header */}
-        <Text style={styles.sectionTitle}>
-          {isPickedUp ? 'Order Details' : 'Order Items'}
-          <Text style={styles.nOftext}> ({itemCount} items)</Text>
-        </Text>
-        <View style={styles.dottedLine} />
+{/* ── Bottom Sheet with preview and expand button ────────────────── */}
 
-        {/* Order items via FlashList */}
-        {orderLines.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No items</Text>
-          </View>
-        ) : (
-         <View style={listHeight ? { height: listHeight, flex: 1 } : { flexShrink: 1, flex: 1 }}>
-            <FlashList
-              data={orderLines}
-              estimatedListSize={70}
-              keyExtractor={(item: any) => String(item.id)}
-              showsVerticalScrollIndicator={itemCount > 3}
-              scrollEnabled={true}
-                nestedScrollEnabled={true}          // 👈 fixes scroll inside BottomSheet
-  overScrollMode="never"              // 👈 removes Android overscroll glow
-  decelerationRate="normal" 
-              renderItem={({ item, index }: any) => (
-                <RenderItem
-                  item={{
-                    id:       item.id,
-                    quantity: item.quantity,
-                    price:    item.line_total_cents,
-                    menu_item: {
-                      name:        item.MenuItem?.name,
-                      description: item.MenuItem?.description,
-                      image_url:   item.MenuItem?.image_url,
-                      item_type:   item.MenuItem?.item_type,
-                    },
-                    options: [],
-                  }}
-                  index={index}
-                />
-              )}
-            />
-          </View>
-        )}
-
-        {/* CTA button — hidden after delivery */}
-        {!isDelivered && (
-          <View style={[styles.ctaContainer, { bottom: vs(20) + insets.bottom }]}>
-            {!isPickedUp ? (
-              <CustomButton
-                title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
-                style={[styles.pickupButton, isPickingUp && styles.buttonDisabled]}
-                disabled={isPickingUp}
-                onPress={handlePickedUp}
-              />
-            ) : (
-              <CustomButton
-                title={isDelivering ? 'Delivering...' : 'Mark as Delivered'}
-                style={[styles.deliverButton, isDelivering && styles.buttonDisabled]}
-                disabled={isDelivering}
-                onPress={handleDeliverOrder}
-              />
-            )}
-          </View>
-        )}
-      </BottomGradientBottomSheet>
+<RunnerOrderItemsModal
+  visible={showSlideModal && !isDelivered}
+  onClose={() => setShowSlideModal(false)}
+  orderItems={orderLines}
+  isPickedUp={isPickedUp}
+  isPickingUp={isPickingUp}
+  isDelivering={isDelivering}
+  onPickup={handlePickedUp}
+  onDeliver={handleDeliverOrder}
+  maxHeightPercentage={sheetMaxHeight}
+  minHeightPercentage={0.10}
+/>
 
       {/* ── Success Modal ─────────────────────────────────────────────────── */}
       <SuccessModal
@@ -1370,7 +1479,7 @@ export default CustomerInfoScreen;
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: Colors.white },
-  container:     { flex: 1, backgroundColor: Colors.white },
+  container:     { backgroundColor: Colors.white },
 
   // ── Map ────────────────────────────────────────────────────────────────────
   mapContainer: {
@@ -1394,6 +1503,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     marginHorizontal: ms(16),
     gap: ms(12),
+   // backgroundColor: Colors.red1,
   },
 
   // ── Outlet card ────────────────────────────────────────────────────────────

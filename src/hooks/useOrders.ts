@@ -23,20 +23,23 @@ export const useOrders = () => {
       setIsLoadingStatus(true);
 
       const statusRes = await getRunnerStatus();
-      logger.log('getRunnerStatus res:', statusRes);
+     // logger.log('getRunnerStatus res:', statusRes);
 
       const status = statusRes?.success ? statusRes.data : null;
       setRunnerStatusState(status);
 
-      if (!status?.is_on_duty) return { isOnDuty: false };
+      if (!status?.is_on_duty) return { is_on_duty: false };
 
       if (status?.current_assignment) {
         setActiveAssignment(status.current_assignment);
         onActiveOrder?.(status.current_assignment);
-        return { isOnDuty: true, hasActiveAssignment: true };
+        return { is_on_duty: true, current_assignment
+: true };
       }
 
-      return { isOnDuty: true, hasActiveAssignment: false };
+      return { is_on_duty
+: true, current_assignment
+: false };
 
     } catch (error) {
       logger.log('loadRunnerStatus error:', error);
@@ -50,12 +53,12 @@ export const useOrders = () => {
   // Fetches available orders based on runner location
   // res.data: [ { id, distance, time_remaining, delivery_address, ... } ]
   // ─────────────────────────────────────────────────────────────────────────────
-  const loadOrders = async (latitude: number, longitude: number) => {
+  const loadOrders = async (latitude: number, longitude: number, action: 'initial' | 'manual' | 'socket' = 'socket') => {
     try {
       setIsLoadingOrders(true);
 
       const ordersRes = await getAvailableOrders(latitude, longitude);
-      logger.log('getAvailableOrders res:', ordersRes);
+      //logger.log('getAvailableOrders res:', ordersRes);
 
       if (!ordersRes?.success) return;
 
@@ -92,7 +95,7 @@ export const useOrders = () => {
     try {
       setIsLoadingStatus(true);
       const res = await setRunnerStatus();
-      logger.log('setRunnerStatus res:', res);
+    //  logger.log('setRunnerStatus res:', res);
 
       if (res?.success) {
         const isOnDuty = res.data?.is_on_duty;
@@ -127,7 +130,7 @@ export const useOrders = () => {
       show();
       setIsAccepting(true);
       const res = await acceptOrderApi(orderId);
-      logger.log('acceptOrder res:', res);
+     // logger.log('acceptOrder res:', res);
 
       if (res?.success) {
         toast(res?.message || 'Order accepted!', 'success', 3000);

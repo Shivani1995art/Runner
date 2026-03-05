@@ -97,7 +97,7 @@ export const useOrderDetail = () => {
   // ─────────────────────────────────────────────────────────────────────────────
   const fetchOrderDetail = useCallback(async (orderId?: number) => {
     try {
-      show();
+     // show();
       setIsLoading(true);
       logger.log('fetchOrderDetail orderId:', orderId);
 
@@ -128,10 +128,10 @@ export const useOrderDetail = () => {
     } catch (e) {
       logger.log('fetchOrderDetail error:', e);
     } finally {
-      hide();
+    //  hide();
       setIsLoading(false);
     }
-  }, [show, hide]);
+  }, []);
 
   // ── deliverOrder ────────────────────────────────────────────────────────────
   // res: { success, message, data: { order } }
