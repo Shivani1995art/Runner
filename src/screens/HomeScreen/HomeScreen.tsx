@@ -2805,6 +2805,982 @@
 
 // export default HomeScreen;
 
+// import React, { useEffect, useState, useCallback, useRef, useContext, useMemo } from 'react';
+// import {
+//   StyleSheet,
+//   View,
+//   ScrollView,
+//   StatusBar,
+//   Text,
+//   Platform,
+//   RefreshControl,
+//   AppState,
+//   AppStateStatus,
+// } from 'react-native';
+// import { useFocusEffect } from '@react-navigation/native';
+// import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// import { FlashList } from '@shopify/flash-list';
+
+// // ── Components ───────────────────────────────────────────────────────────────
+// import CustomHeaderHome from '../../components/common/CustomHeaderHome';
+// import DateCard from '../../components/cards/DateCard';
+// import OrderCard from '../../components/cards/OrderCard';
+// import RenderItem from '../../components/RenderItem/RenderItem';
+// import CustomButton from '../../components/Buttons/CustomButton';
+// import BottomGradientModal from '../../components/modals/BottomGradientModal';
+// import OrderCardShimmer from '../../components/OrderCardShimmer';
+// import OrderItemShimmer from '../../components/OrderItemShimmer';
+// import PermissionFlowModal from '../../components/modals/PermissionFlowModal';
+// import Notification from '../../assets/svg/Notification';
+// import { useIsFocused } from '@react-navigation/native';
+
+// // ── Hooks ────────────────────────────────────────────────────────────────────
+// import { useOrders } from '../../hooks/useOrders';
+// import { useToast } from '../../hooks/ToastProvider';
+// import { useAuth } from '../../hooks/useAuth';
+// import useNotificationSetup from '../../hooks/useNotificationSetup';
+// import { useUserLocation } from '../../hooks/useUserLocation';
+// import { useAppPermissions } from '../../hooks/useAppPermissions';
+// import {
+//   useOutletSocket,
+//   useRunnerSocket,
+//   useOrderSocket,
+// } from '../../hooks/useSocketListener';
+
+// // ── Context ──────────────────────────────────────────────────────────────────
+// import { AuthContext } from '../../context/AuthContext';
+
+// // ── Services ─────────────────────────────────────────────────────────────────
+// import LocationService from '../../hooks/LocationModule.android';
+// import { SOCKET_EVENTS } from '../../services/Socket/SocketEvents';
+
+// // ── Utils ────────────────────────────────────────────────────────────────────
+// import { vs, ms, fontSize, hp } from '../../utils/responsive';
+// import { Typography } from '../../utils/typography';
+// import Colors from '../../utils/colors';
+// import { logger } from '../../utils/logger';
+
+// // ═════════════════════════════════════════════════════════════════════════════
+// // TYPES
+// // ═════════════════════════════════════════════════════════════════════════════
+
+// interface LocationCoords {
+//   latitude: number;
+//   longitude: number;
+// }
+
+// type LoadAction = 'initial' | 'manual' | 'socket' | null;
+// type ScreenState = 'loading' | 'empty' | 'offline' | 'orders' | 'outlet-closed';
+
+// // ═════════════════════════════════════════════════════════════════════════════
+// // HELPER FUNCTIONS
+// // ═════════════════════════════════════════════════════════════════════════════
+
+// /**
+//  * Format date to: "01 Jan 2024"
+//  */
+// const formatDate = (dateString?: string): string => {
+//   const date = dateString ? new Date(dateString) : new Date();
+//   return date.toLocaleDateString(undefined, {
+//     day: '2-digit',
+//     month: 'short',
+//     year: 'numeric',
+//   });
+// };
+
+// /**
+//  * Calculate modal height based on item count
+//  */
+// const calculateModalHeight = (itemCount: number = 0) => {
+//   return {
+//     percentage: itemCount <= 1 ? 0.4 : itemCount === 2 ? 0.5 : 0.6,
+//     listHeight:
+//       itemCount <= 1 ? hp(30) : itemCount === 2 ? hp(20) : itemCount === 3 ? hp(28) : hp(30),
+//   };
+// };
+
+// /**
+//  * Determine which orders to display (preloaded or from API)
+//  */
+// // const getDisplayOrders = (preLoaded: any[], apiOrders: any[]): any[] => {
+// //   return preLoaded && preLoaded.length > 0 ? preLoaded : apiOrders;
+// // };
+// /**
+//  * Merges preloaded and API orders with priority.
+//  * API/Socket orders take precedence over stale preloaded data.
+//  */
+// const getDisplayOrders = (preLoaded: any[], apiOrders: any[]): any[] => {
+//   const pre = preLoaded || [];
+//   const api = apiOrders || [];
+
+//   // 1. Create a Map using ID as key to ensure uniqueness
+//   // Putting 'pre' first and 'api' second means 'api' overrides 'pre'
+//   const combinedMap = new Map();
+  
+//   [...pre, ...api].forEach(order => {
+//     if (order?.id) {
+//       combinedMap.set(order.id, order);
+//     }
+//   });
+
+//   const mergedOrders = Array.from(combinedMap.values());
+// logger.log("===========mege======list===")
+//   // 2. Sort by Priority/Time (Optional)
+//   // Example: Orders with shorter time remaining or "Accepted" status first
+//   return mergedOrders.sort((a, b) => {
+//     // If you have a timestamp or ID to sort by:
+//     return b.id - a.id; // Newest IDs first
+//   });
+// };
+// /**
+//  * Determine screen state based on conditions
+//  */
+// const determineScreenState = (
+//   outletClosed: boolean,
+//   isOnDuty: boolean,
+//   showShimmer: boolean,
+//   ordersCount: number
+// ): ScreenState => {
+//   if (outletClosed) return 'outlet-closed';
+//   if (!isOnDuty) return 'offline';
+//   if (showShimmer) return 'loading';
+//   if (ordersCount === 0) return 'empty';
+//   return 'orders';
+// };
+
+// // ═════════════════════════════════════════════════════════════════════════════
+// // HOME SCREEN COMPONENT
+// // ═════════════════════════════════════════════════════════════════════════════
+
+// const HomeScreen = ({ navigation, route }: any) => {
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // STATE MANAGEMENT
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   const [showPermissionModal, setShowPermissionModal] = useState(false);
+//   const [showOrderModal, setShowOrderModal] = useState(false);
+//   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+//   const [isRefreshing, setIsRefreshing] = useState(false);
+//   const [outletClosed, setOutletClosed] = useState(false);
+//   const [loadAction, setLoadAction] = useState<LoadAction>(null);
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // REFS - INITIALIZATION & STATE TRACKING
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   const isPerformingActionRef = useRef(false);
+//   const hasInitializedRef = useRef(false);
+//   const initialLoadCompleteRef = useRef(false);
+//   const lastForegroundFetchRef = useRef<number>(0);
+//   const appStateRef = useRef(AppState.currentState);
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // CONTEXT & HOOKS
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   const { user, outlet } = useContext(AuthContext);
+//   const insets = useSafeAreaInsets();
+//   const { toast } = useToast();
+//   const { saveToken } = useAuth();
+//   const { location: iosLocation, refetch: fetchIOSLocation } = useUserLocation();
+//   const { isLocationEnabled,ensureLocationAccess } = useAppPermissions();
+
+// // Inside your component:
+//   const isFocused = useIsFocused();
+
+//   // Orders hook
+//   const {
+//     orders,
+//     loadOrders,
+//     loadRunnerStatus,
+//     runnerStatus,
+//     setRunnerStatus,
+//     toggleRunnerDuty,
+//     isLoadingOrders,
+//     isLoadingStatus,
+//     handleAcceptOrder,
+//   } = useOrders();
+
+//   // Route params
+//   const preLoadedOrders = route?.params?.preLoadedOrders || null;
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // COMPUTED VALUES
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   const showShimmer = loadAction === 'manual';
+//   // const displayOrders = getDisplayOrders(preLoadedOrders, orders);
+// const displayOrders = useMemo(() => {
+//   return getDisplayOrders(preLoadedOrders, orders);
+// }, [preLoadedOrders, orders]);
+
+//   const screenState = determineScreenState(
+//     outletClosed,
+//     runnerStatus?.is_on_duty ?? false,
+//     showShimmer,
+//     displayOrders.length
+//   );
+
+//   const { percentage: modalHeightPercentage, listHeight } = calculateModalHeight(
+//     selectedOrder?.order_lines?.length ?? 0
+//   );
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // LOCATION MANAGEMENT
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   /**
+//    * Get device location (Android/iOS)
+//    * Handles permission checks and platform-specific location retrieval
+//    */
+//   const getLocationCoords = useCallback(async (): Promise<LocationCoords | null> => {
+//     try {
+//       logger.log('📍 Getting location...');
+
+//       const access = await ensureLocationAccess();
+//       const gpsEnabled = await isLocationEnabled();
+//       if (access.status === 'NO_PERMISSION' || access.status === 'SERVICES_DISABLED') {
+//         logger.warn('⚠️ Location permission denied or disabled');
+
+//         setShowPermissionModal(true);
+//         return null;
+//       }
+
+//       if (Platform.OS === 'android') {
+//         const locationData = await LocationService.getCurrentLocation();
+//         return {
+//           latitude: locationData.latitude,
+//           longitude: locationData.longitude,
+//         };
+//       }
+
+//       return await fetchIOSLocation();
+//     } catch (error) {
+//       logger.error('❌ Error getting location:', error);
+//       toast('Failed to get location', 'error', 3000);
+//       return null;
+//     }
+//   }, [ensureLocationAccess, fetchIOSLocation, toast]);
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // ORDERS MANAGEMENT
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   /**
+//    * Load orders from API
+//    * Tracks action type for shimmer control
+//    */
+//   const loadOrdersWithAction = useCallback(
+//     async (lat: number, lng: number, action: 'initial' | 'manual' | 'socket' = 'socket') => {
+//       logger.log(`📦 Loading orders [${action}]...`);
+
+//       if (action === 'manual') {
+//         setLoadAction('manual');
+//       }
+
+//       try {
+//         await loadOrders(lat, lng, action);
+//       } catch (error) {
+//         logger.error(`❌ Error loading orders [${action}]:`, error);
+//         toast('Failed to load orders', 'error', 3000);
+//       } finally {
+//         if (action === 'manual') {
+//           setTimeout(() => setLoadAction(null), 300);
+//         } else {
+//           setLoadAction(null);
+//         }
+//       }
+//     },
+//     []
+//   );
+
+//   /**
+//    * Load orders if runner is on duty and outlet is open
+//    */
+//   const loadOrdersIfOnDuty = useCallback(
+//     async (action: 'initial' | 'manual' | 'socket' = 'socket') => {
+//       if (outletClosed) {
+//         logger.log('⏭️ Outlet closed, skipping order load');
+//         return;
+//       }
+
+//       // if (!runnerStatus?.is_on_duty) {
+//       //   logger.log('⏭️ Runner offline, skipping order load');
+//       //   return;
+//       // }
+
+//       logger.log(`📦 Runner on duty, loading orders [${action}]`);
+//       const coords = await getLocationCoords();
+
+//       if (coords) {
+//         await loadOrdersWithAction(coords.latitude, coords.longitude, action);
+//       }
+//     },
+//     [outletClosed, runnerStatus?.is_on_duty]
+//   );
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // SOCKET LISTENERS
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   /**
+//    * Listen to runner status changes (online/offline)
+//    */
+//   useRunnerSocket((event, data) => {
+
+// if (!isFocused) return;
+
+//     logger.log('📡 Runner status event:', event);
+
+//     if (event === SOCKET_EVENTS.RUNNER_STATUS_CHANGED && data.runnerId === user?.id) {
+//       if (isPerformingActionRef.current) {
+//         logger.log('⏭️ Skipping runner status update - action in progress');
+//         isPerformingActionRef.current = false;
+//         return;
+//       }
+
+//       const newStatus = data.status;
+
+//       if (newStatus === 'offline') {
+//         logger.log('🔴 Runner went offline');
+//         setRunnerStatus((prev: any) => ({ ...prev, is_on_duty: false }));
+//         toast('You are now offline', 'info', 3000);
+//       } else if (newStatus === 'online') {
+//         logger.log('🟢 Runner is now online');
+//         setRunnerStatus((prev: any) => ({ ...prev, is_on_duty: true }));
+//         toast('You are now online', 'success', 3000);
+//         loadOrdersIfOnDuty('socket');
+//       }
+//     }
+//   });
+
+//   /**
+//    * Listen to outlet status (open/closed)
+//    */
+//   useOutletSocket((event, data) => {
+
+// if (!isFocused) return;
+
+//     logger.log('📡 Outlet event:', event);
+
+//     if (event === SOCKET_EVENTS.OUTLET_CLOSED && data.id === outlet?.id) {
+//       logger.log('🔴 Outlet closed');
+//       setOutletClosed(true);
+//       setRunnerStatus((prev: any) => ({ ...prev, is_on_duty: false }));
+//       toast(`${data?.name || 'Outlet'} is now closed`, 'alert', 5000);
+//     }
+
+//     if (event === SOCKET_EVENTS.OUTLET_OPENED && data.id === outlet?.id) {
+//       logger.log('🟢 Outlet opened');
+//       setOutletClosed(false);
+//       toast(`${data?.name || 'Outlet'} is now open!`, 'success', 3000);
+//     }
+//   });
+
+//   /**
+//    * Listen to order status updates (ready, assigned, accepted)
+//    */
+//   useOrderSocket((event, data) => {
+
+//     if (!isFocused) return;
+
+//     logger.log('📡 Order event:', event);
+
+//     if (event === SOCKET_EVENTS.ORDER_READY) {
+//       const orderId = data.orderId || data.order_id || data.id;
+
+//       if (isPerformingActionRef.current) {
+//         logger.log('⏭️ Skipping order ready - action in progress');
+//         isPerformingActionRef.current = false;
+//         return;
+//       }
+
+//       // toast(
+//       //   `Order #${orderId} is ready for pickup!`,
+//       //   'success',
+//       //   5000,
+//       //   () => {
+//       //     // navigation.navigate('CustomerInfoScreen', {
+//       //     //   orderId,
+//       //     // });
+//       //   }
+//       // );
+
+//       loadOrdersIfOnDuty('socket');
+//     }
+
+//     if (event === SOCKET_EVENTS.ORDER_ASSIGNED && data.runnerId !== user?.id) {
+//       logger.log('📦 Order assigned to another runner');
+//     }else if(event === SOCKET_EVENTS.ORDER_ASSIGNED){
+//       const orderId = data.orderId || data.order_id || data.id;
+//       logger.log('📦 Order assigned to this runner');
+//       //loadOrdersIfOnDuty('socket');
+//        navigation.navigate('CustomerInfoScreen', {
+//             orderId,
+//           });
+//     }
+
+//     if (event === SOCKET_EVENTS.ORDER_ACCEPTED) {
+//       if (isPerformingActionRef.current) {
+//         logger.log('⏭️ Skipping order accepted - action in progress');
+//         isPerformingActionRef.current = false;
+//         return;
+//       }
+//       loadOrdersIfOnDuty('socket');
+//     }
+//   });
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // NOTIFICATION SETUP
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   useNotificationSetup(true, saveToken, (data) => {
+//     logger.log('🔔 Notification tapped:', data);
+//     if (data?.screen === 'order') {
+//       navigation.navigate('CustomerInfoScreen', { orderId: data.order_id });
+//     }
+//   });
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // EFFECTS - INITIALIZATION
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   /**
+//    * Initialize home screen on first mount
+//    * Loads runner status and orders
+//    */
+//   useEffect(() => {
+//     const initialize = async () => {
+//       if (hasInitializedRef.current) {
+//         logger.log('⏭️ Already initialized');
+//         return;
+//       }
+
+//       logger.log('🚀 Initializing HomeScreen...');
+//       hasInitializedRef.current = true;
+
+//       try {
+//         // Load runner status
+//         const status = await loadRunnerStatus((assignment: any) => {
+//           logger.log('➡️ Navigating to active assignment');
+//           navigation.navigate('CustomerInfoScreen', { order: assignment });
+//         });
+
+//         // Use preloaded orders if available, otherwise load from API
+//         if (preLoadedOrders && preLoadedOrders.length > 0) {
+//           logger.log('✅ Using preloaded orders:', preLoadedOrders.length);
+//         } else if (status?.is_on_duty && !outletClosed) {
+//           const coords = await getLocationCoords();
+//           if (coords) {
+//             await loadOrdersWithAction(coords.latitude, coords.longitude, 'initial');
+//           }
+//         } else {
+//           logger.log('ℹ️ Runner offline or outlet closed, no orders loaded');
+//         }
+//       } catch (error) {
+//         logger.error('❌ Initialization error:', error);
+//       } finally {
+//         initialLoadCompleteRef.current = true;
+//       }
+//     };
+
+//     initialize();
+//   }, []);
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // EFFECTS - APP STATE CHANGES
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   /**
+//    * Reload orders when app comes to foreground
+//    * Prevents excessive API calls with debouncing
+//    */
+//   useEffect(() => {
+//     const subscription = AppState.addEventListener('change', handleAppStateChange);
+//     return () => subscription.remove();
+//   }, [runnerStatus?.is_on_duty, outletClosed]);
+
+//   const handleAppStateChange = async (nextState: AppStateStatus) => {
+//     const isComingToForeground =
+//       appStateRef.current.match(/inactive|background/) && nextState === 'active';
+
+//     logger.log('📱 App state:', appStateRef.current, '→', nextState);
+//     appStateRef.current = nextState;
+
+//     if (!isComingToForeground || !initialLoadCompleteRef.current) {
+//       return;
+//     }
+
+//     // Debounce foreground fetch (max once per 10 seconds)
+//     const now = Date.now();
+//     if (now - lastForegroundFetchRef.current < 10000) {
+//       logger.log('⏭️ Too soon to fetch');
+//       return;
+//     }
+
+//     lastForegroundFetchRef.current = now;
+
+//     logger.log('🔄 App foreground - reloading status and orders');
+
+//     try {
+//       const status = await loadRunnerStatus((assignment: any) => {
+//         navigation.navigate('CustomerInfoScreen', { order: assignment });
+//       });
+
+//       if (status?.is_on_duty && !outletClosed) {
+//         await loadOrdersIfOnDuty('socket');
+//       }
+//     } catch (error) {
+//       logger.error('❌ Foreground refresh error:', error);
+//     }
+//   };
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // EFFECTS - SCREEN FOCUS
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   /**
+//    * Reload orders when screen comes into focus
+//    */
+//   useFocusEffect(
+//     useCallback(() => {
+//       if (!initialLoadCompleteRef.current) {
+//         logger.log('⏭️ Initial load not complete');
+//         return;
+//       }
+
+//       logger.log('👀 Screen focused - reloading');
+
+//       const reloadOnFocus = async () => {
+//         try {
+//           const status = await loadRunnerStatus((assignment: any) => {
+//             navigation.navigate('CustomerInfoScreen', { order: assignment });
+//           });
+
+//           if (status?.is_on_duty && !outletClosed) {
+//             await loadOrdersIfOnDuty('socket');
+//           }
+//         } catch (error) {
+//           logger.error('❌ Focus reload error:', error);
+//         }
+//       };
+
+//       reloadOnFocus();
+//     }, [navigation])//outletClosed, loadOrdersIfOnDuty, loadRunnerStatus, 
+//   );
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // EVENT HANDLERS
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   /**
+//    * Pull-to-refresh handler
+//    */
+//   const onRefresh = useCallback(async () => {
+//     if (!runnerStatus?.is_on_duty || outletClosed) {
+//       logger.log('⏭️ Cannot refresh - offline or outlet closed');
+//       return;
+//     }
+
+//     logger.log('🔄 Pull to refresh');
+//     setIsRefreshing(true);
+
+//     try {
+//       const coords = await getLocationCoords();
+//       if (coords) {
+//         await loadOrdersWithAction(coords.latitude, coords.longitude, 'manual');
+//       }
+//     } finally {
+//       setIsRefreshing(false);
+//     }
+//   }, [runnerStatus?.is_on_duty, outletClosed, getLocationCoords, loadOrdersWithAction]);
+
+//   /**
+//    * Toggle runner duty (online/offline)
+//    */
+//   const handleTakeBreak = useCallback(async () => {
+//     if (outletClosed && !runnerStatus?.is_on_duty) {
+//       toast('Cannot go online - outlet is closed', 'error', 3000);
+//       return;
+//     }
+
+//     logger.log('🔄 Toggling duty status');
+//     isPerformingActionRef.current = true;
+
+//     try {
+//       const coords = await getLocationCoords();
+//       await toggleRunnerDuty(
+//         coords?.latitude,
+//         coords?.longitude,
+//         (assignment: any) => {
+//           navigation.navigate('CustomerInfoScreen', { order: assignment });
+//         }
+//       );
+//     } finally {
+//       setTimeout(() => {
+//         isPerformingActionRef.current = false;
+//       }, 2000);
+//     }
+//   }, [outletClosed, runnerStatus?.is_on_duty, getLocationCoords, toggleRunnerDuty, navigation, toast]);
+
+//   /**
+//    * Open order detail modal
+//    */
+//   const handlePressAcceptOrder = useCallback(
+//     (orderId: number) => {
+//       const order =
+//         preLoadedOrders?.find((o: any) => o.id === orderId) ||
+//         orders.find((o) => o.id === orderId);
+
+//       if (!order) {
+//         logger.warn('⚠️ Order not found:', orderId);
+//         return;
+//       }
+
+//       setSelectedOrder(order);
+//       setShowOrderModal(true);
+//     },
+//     [preLoadedOrders, orders]
+//   );
+
+//   /**
+//    * Accept selected order
+//    */
+//   const onPressAccept = useCallback(async () => {
+//     if (!selectedOrder?.id) {
+//       logger.warn('⚠️ No order selected');
+//       return;
+//     }
+
+//     logger.log('✅ Accepting order:', selectedOrder.id);
+//     isPerformingActionRef.current = true;
+
+//     try {
+//       await handleAcceptOrder(
+//         selectedOrder.id,
+//         (acceptedOrder: any) => {
+//           navigation.navigate('CustomerInfoScreen', {
+//             order: acceptedOrder ?? selectedOrder,
+//           });
+//         },
+//         () => {
+//           logger.log('📦 Order already assigned, refreshing');
+//           loadOrdersIfOnDuty('socket');
+//         }
+//       );
+//     } finally {
+//       setTimeout(() => {
+//         isPerformingActionRef.current = false;
+//       }, 2000);
+//       setShowOrderModal(false);
+//     }
+//   }, [selectedOrder, handleAcceptOrder, loadOrdersIfOnDuty, navigation]);
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // RENDER - CONDITIONAL STATES
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   const renderOrdersList = () => {
+//     if (showShimmer) {
+//       return (
+//         <View>
+//           <OrderCardShimmer />
+//           <OrderCardShimmer />
+//           <OrderCardShimmer />
+//         </View>
+//       );
+//     }
+
+//     if (displayOrders.length === 0) {
+//       return <EmptyState title="No orders available" subtitle="New orders will appear here" />;
+//     }
+
+//     return (
+//       <FlashList
+//         data={displayOrders}
+//         estimatedItemSize={100}
+//         removeClippedSubviews
+//         keyExtractor={(item) => String(item.id)}
+//         renderItem={({ item }) => (
+//           <OrderCard
+//             distance={item.distance}
+//             estimatedReadyAt={item.estimatedReadyAt}
+//             location={item.location}
+//             status={item.status}
+//             onAccept={() => handlePressAcceptOrder(item.id)}
+//             orcontainerStyle={{
+//               backgroundColor: Colors.cardbg,
+//               paddingVertical: vs(8),
+//             }}
+//           />
+//         )}
+//       />
+//     );
+//   };
+
+//   const renderContentState = () => {
+//     switch (screenState) {
+//       case 'outlet-closed':
+//         return (
+//           <EmptyState
+//             title="Outlet is Closed"
+//             subtitle="You've been set offline. Orders appear when outlet opens."
+//           />
+//         );
+
+//       case 'offline':
+//         return (
+//           <EmptyState
+//             title="You're on a break"
+//             subtitle="Resume duty to see orders"
+//           />
+//         );
+
+//       case 'loading':
+//       case 'empty':
+//       case 'orders':
+//       default:
+//         return renderOrdersList();
+//     }
+//   };
+
+//   // ══════════════════════════════════════════════════════════════════════════
+//   // RENDER - MAIN COMPONENT
+//   // ══════════════════════════════════════════════════════════════════════════
+
+//   return (
+//     <View style={styles.container}>
+//       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+
+//       {/* Header */}
+//       <CustomHeaderHome
+//         profileImage={user?.image_url}
+//         displayName={user?.display_name}
+//         location={outlet?.name}
+//         onNotificationPress={() => logger.log('Notification pressed')}
+//         NotificationIcon={<Notification />}
+//         onPress={() => navigation.navigate('ProfileScreen')}
+//       />
+
+//       {/* Date/Duty Card */}
+//       <View style={styles.headerSection}>
+//         <DateCard
+//           date={formatDate(runnerStatus?.last_clock_in)}
+//           deliveryCount={runnerStatus?.total_delivered || 0}
+//           takeBreakText={runnerStatus?.is_on_duty ? 'Take Break' : 'Resume Duty'}
+//           loading={isLoadingStatus}
+//           onTakeBreak={handleTakeBreak}
+//         />
+//       </View>
+
+//       {/* Orders List */}
+//       <ScrollView
+//         style={styles.scrollView}
+//         contentContainerStyle={styles.scrollViewContent}
+//         showsVerticalScrollIndicator={false}
+//         scrollEnabled={screenState === 'orders'}
+//         refreshControl={
+//           <RefreshControl
+//             refreshing={isRefreshing || showShimmer}
+//             onRefresh={onRefresh}
+//             colors={[Colors.orange]}
+//             tintColor={Colors.orange}
+//             enabled={runnerStatus?.is_on_duty === true && !outletClosed}
+//           />
+//         }
+//       >
+//         {renderContentState()}
+//       </ScrollView>
+
+//       {/* Order Detail Modal */}
+//       <BottomGradientModal
+//         visible={showOrderModal}
+//         onClose={() => setShowOrderModal(false)}
+//         maxHeightPercentage={modalHeightPercentage}
+//         minHeightPercentage={0.85}
+//       >
+//         <OrderDetailModal
+//           order={selectedOrder}
+//           listHeight={listHeight}
+//           isLoadingOrders={isLoadingOrders}
+//           onAccept={onPressAccept}
+//           insets={insets}
+//         />
+//       </BottomGradientModal>
+
+//       {/* Permission Modal */}
+//       <PermissionFlowModal
+//         visible={showPermissionModal}
+//         onComplete={() => setShowPermissionModal(false)}
+//       />
+//     </View>
+//   );
+// };
+
+// // ═════════════════════════════════════════════════════════════════════════════
+// // SUBCOMPONENTS
+// // ═════════════════════════════════════════════════════════════════════════════
+
+// /**
+//  * Empty state component
+//  */
+// const EmptyState = ({ title, subtitle }: { title: string; subtitle: string }) => (
+//   <View style={styles.emptyContainer}>
+//     <Text style={styles.emptyTitle}>{title}</Text>
+//     <Text style={styles.emptySubtitle}>{subtitle}</Text>
+//   </View>
+// );
+
+// /**
+//  * Order detail modal content
+//  */
+// const OrderDetailModal = ({
+//   order,
+//   listHeight,
+//   isLoadingOrders,
+//   onAccept,
+//   insets,
+// }: {
+//   order: any;
+//   listHeight: number;
+//   isLoadingOrders: boolean;
+//   onAccept: () => void;
+//   insets: any;
+// }) => (
+//   <View style={styles.modalContent}>
+//     {/* Order Card */}
+//     <OrderCard
+//       orderID={order?.id}
+//       distance={order?.distance ?? '—'}
+//       estimatedReadyAt={order?.estimatedReadyAt ?? '—'}
+//       location={order?.location ?? '—'}
+//       status={order?.status ?? '—'}
+//       orcontainerStyle={styles.orderCardModal}
+//       rightText="Deliver to"
+//       showOrderButton={false}
+//       locationUnderline={false}
+//     />
+
+//     {/* Item Count */}
+//     <Text style={styles.itemCountText}>
+//       No. of Items: {order?.order_lines?.length ?? 0}
+//     </Text>
+
+//     {/* Items List */}
+//     <View style={[styles.listContainer, { height: listHeight }]}>
+//       <FlashList
+//         data={
+//           isLoadingOrders
+//             ? Array(3).fill({})
+//             : order?.order_lines ?? []
+//         }
+//         estimatedItemSize={30}
+//         keyExtractor={(item, index) => item?.id ? String(item.id) : String(index)}
+//         showsVerticalScrollIndicator={false}
+//         renderItem={({ item, index }) =>
+//           isLoadingOrders ? (
+//             <OrderItemShimmer />
+//           ) : (
+//             <RenderItem item={item} index={index} />
+//           )
+//         }
+//       />
+//     </View>
+
+//     {/* Accept Button */}
+//     <View style={[styles.buttonFooter, { paddingBottom: insets.bottom }]}>
+//       <CustomButton
+//         title="Accept Order"
+//         style={styles.acceptButton}
+//         onPress={onAccept}
+//       />
+//     </View>
+//   </View>
+// );
+
+// // ═════════════════════════════════════════════════════════════════════════════
+// // STYLES
+// // ═════════════════════════════════════════════════════════════════════════════
+
+// const styles = StyleSheet.create({
+//   // Container
+//   container: {
+//     flex: 1,
+//     backgroundColor: Colors.white,
+//   },
+
+//   // Header Section
+//   headerSection: {
+//     paddingHorizontal: ms(16),
+//   },
+
+//   // Scroll View
+//   scrollView: {
+//     flex: 1,
+//   },
+//   scrollViewContent: {
+//     paddingHorizontal: ms(16),
+//     paddingBottom: vs(20),
+//   },
+
+//   // Empty State
+//   emptyContainer: {
+//     flex: 1,
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//     paddingVertical: vs(60),
+//   },
+//   emptyTitle: {
+//     fontSize: fontSize(18),
+//     fontFamily: Typography.Bold.fontFamily,
+//     color: Colors.black1,
+//     marginBottom: vs(6),
+//   },
+//   emptySubtitle: {
+//     fontSize: fontSize(14),
+//     fontFamily: Typography.Regular.fontFamily,
+//     color: Colors.borderColor1,
+//     textAlign: 'center',
+//     paddingHorizontal: ms(32),
+//   },
+
+//   // Modal Content
+//   modalContent: {
+//     flex: 1,
+//     paddingHorizontal: ms(16),
+//   },
+//   orderCardModal: {
+//     backgroundColor: 'transparent',
+//   },
+//   listContainer: {
+//     flex: 1,
+//     minHeight: vs(60),
+//   },
+//   itemCountText: {
+//     paddingHorizontal: ms(16),
+//     fontSize: fontSize(16),
+//     fontFamily: Typography.SemiBold.fontFamily,
+//     paddingBottom: vs(10),
+//     color: Colors.black1,
+//   },
+
+//   // Button
+//   buttonFooter: {
+//     paddingTop: vs(12),
+//   },
+//   acceptButton: {
+//     borderRadius: ms(10),
+//     backgroundColor: Colors.orange,
+//     width: '90%',
+//     height: vs(50),
+//     alignSelf: 'center',
+//   },
+// });
+
+// export default HomeScreen;
+
+
+
 import React, { useEffect, useState, useCallback, useRef, useContext, useMemo } from 'react';
 import {
   StyleSheet,
@@ -2835,7 +3811,7 @@ import Notification from '../../assets/svg/Notification';
 import { useIsFocused } from '@react-navigation/native';
 
 // ── Hooks ────────────────────────────────────────────────────────────────────
-import { useOrders } from '../../hooks/useOrders';
+import { useOrdersContext } from '../../context/OrdersContext'; // ✅ GLOBAL STATE
 import { useToast } from '../../hooks/ToastProvider';
 import { useAuth } from '../../hooks/useAuth';
 import useNotificationSetup from '../../hooks/useNotificationSetup';
@@ -2869,7 +3845,6 @@ interface LocationCoords {
   longitude: number;
 }
 
-type LoadAction = 'initial' | 'manual' | 'socket' | null;
 type ScreenState = 'loading' | 'empty' | 'offline' | 'orders' | 'outlet-closed';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -2900,50 +3875,17 @@ const calculateModalHeight = (itemCount: number = 0) => {
 };
 
 /**
- * Determine which orders to display (preloaded or from API)
- */
-// const getDisplayOrders = (preLoaded: any[], apiOrders: any[]): any[] => {
-//   return preLoaded && preLoaded.length > 0 ? preLoaded : apiOrders;
-// };
-/**
- * Merges preloaded and API orders with priority.
- * API/Socket orders take precedence over stale preloaded data.
- */
-const getDisplayOrders = (preLoaded: any[], apiOrders: any[]): any[] => {
-  const pre = preLoaded || [];
-  const api = apiOrders || [];
-
-  // 1. Create a Map using ID as key to ensure uniqueness
-  // Putting 'pre' first and 'api' second means 'api' overrides 'pre'
-  const combinedMap = new Map();
-  
-  [...pre, ...api].forEach(order => {
-    if (order?.id) {
-      combinedMap.set(order.id, order);
-    }
-  });
-
-  const mergedOrders = Array.from(combinedMap.values());
-logger.log("===========mege======list===")
-  // 2. Sort by Priority/Time (Optional)
-  // Example: Orders with shorter time remaining or "Accepted" status first
-  return mergedOrders.sort((a, b) => {
-    // If you have a timestamp or ID to sort by:
-    return b.id - a.id; // Newest IDs first
-  });
-};
-/**
  * Determine screen state based on conditions
  */
 const determineScreenState = (
   outletClosed: boolean,
   isOnDuty: boolean,
-  showShimmer: boolean,
+  isLoading: boolean,
   ordersCount: number
 ): ScreenState => {
   if (outletClosed) return 'outlet-closed';
   if (!isOnDuty) return 'offline';
-  if (showShimmer) return 'loading';
+  if (isLoading) return 'loading';
   if (ordersCount === 0) return 'empty';
   return 'orders';
 };
@@ -2952,9 +3894,9 @@ const determineScreenState = (
 // HOME SCREEN COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 
-const HomeScreen = ({ navigation, route }: any) => {
+const HomeScreen = ({ navigation }: any) => {
   // ══════════════════════════════════════════════════════════════════════════
-  // STATE MANAGEMENT
+  // STATE
   // ══════════════════════════════════════════════════════════════════════════
 
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -2962,10 +3904,9 @@ const HomeScreen = ({ navigation, route }: any) => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [outletClosed, setOutletClosed] = useState(false);
-  const [loadAction, setLoadAction] = useState<LoadAction>(null);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // REFS - INITIALIZATION & STATE TRACKING
+  // REFS
   // ══════════════════════════════════════════════════════════════════════════
 
   const isPerformingActionRef = useRef(false);
@@ -2978,49 +3919,37 @@ const HomeScreen = ({ navigation, route }: any) => {
   // CONTEXT & HOOKS
   // ══════════════════════════════════════════════════════════════════════════
 
-  const { user, outlet } = useContext(AuthContext);
+  const { user, outlet,updateOutlet } = useContext(AuthContext);
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
   const { saveToken } = useAuth();
   const { location: iosLocation, refetch: fetchIOSLocation } = useUserLocation();
-  const { isLocationEnabled,ensureLocationAccess } = useAppPermissions();
-
-// Inside your component:
+  const { isLocationEnabled, ensureLocationAccess } = useAppPermissions();
   const isFocused = useIsFocused();
 
-  // Orders hook
+  // ✅ GLOBAL ORDERS CONTEXT (no preLoadedOrders needed!)
   const {
-    orders,
+    state: ordersState,
     loadOrders,
     loadRunnerStatus,
-    runnerStatus,
-    setRunnerStatus,
     toggleRunnerDuty,
-    isLoadingOrders,
-    isLoadingStatus,
     handleAcceptOrder,
-  } = useOrders();
+    syncOrders,
+  } = useOrdersContext();
 
-  // Route params
-  const preLoadedOrders = route?.params?.preLoadedOrders || null;
-
+  const { orders, runnerStatus, isLoadingOrders, isLoadingStatus } = ordersState;
+//logger.log("========orders========",orders)
   // ══════════════════════════════════════════════════════════════════════════
   // COMPUTED VALUES
   // ══════════════════════════════════════════════════════════════════════════
 
-  const showShimmer = loadAction === 'manual';
-  // const displayOrders = getDisplayOrders(preLoadedOrders, orders);
-const displayOrders = useMemo(() => {
-  return getDisplayOrders(preLoadedOrders, orders);
-}, [preLoadedOrders, orders]);
-
   const screenState = determineScreenState(
     outletClosed,
     runnerStatus?.is_on_duty ?? false,
-    showShimmer,
-    displayOrders.length
+    isLoadingOrders,
+    orders.length
   );
-
+//logger.log("========runnerStatus========",runnerStatus)
   const { percentage: modalHeightPercentage, listHeight } = calculateModalHeight(
     selectedOrder?.order_lines?.length ?? 0
   );
@@ -3029,19 +3958,15 @@ const displayOrders = useMemo(() => {
   // LOCATION MANAGEMENT
   // ══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * Get device location (Android/iOS)
-   * Handles permission checks and platform-specific location retrieval
-   */
   const getLocationCoords = useCallback(async (): Promise<LocationCoords | null> => {
     try {
       logger.log('📍 Getting location...');
 
       const access = await ensureLocationAccess();
       const gpsEnabled = await isLocationEnabled();
+
       if (access.status === 'NO_PERMISSION' || access.status === 'SERVICES_DISABLED') {
         logger.warn('⚠️ Location permission denied or disabled');
-
         setShowPermissionModal(true);
         return null;
       }
@@ -3060,63 +3985,30 @@ const displayOrders = useMemo(() => {
       toast('Failed to get location', 'error', 3000);
       return null;
     }
-  }, [ensureLocationAccess, fetchIOSLocation, toast]);
+  }, []);
 
   // ══════════════════════════════════════════════════════════════════════════
   // ORDERS MANAGEMENT
   // ══════════════════════════════════════════════════════════════════════════
 
   /**
-   * Load orders from API
-   * Tracks action type for shimmer control
-   */
-  const loadOrdersWithAction = useCallback(
-    async (lat: number, lng: number, action: 'initial' | 'manual' | 'socket' = 'socket') => {
-      logger.log(`📦 Loading orders [${action}]...`);
-
-      if (action === 'manual') {
-        setLoadAction('manual');
-      }
-
-      try {
-        await loadOrders(lat, lng, action);
-      } catch (error) {
-        logger.error(`❌ Error loading orders [${action}]:`, error);
-        toast('Failed to load orders', 'error', 3000);
-      } finally {
-        if (action === 'manual') {
-          setTimeout(() => setLoadAction(null), 300);
-        } else {
-          setLoadAction(null);
-        }
-      }
-    },
-    []
-  );
-
-  /**
    * Load orders if runner is on duty and outlet is open
    */
   const loadOrdersIfOnDuty = useCallback(
-    async (action: 'initial' | 'manual' | 'socket' = 'socket') => {
+    async () => {
       if (outletClosed) {
         logger.log('⏭️ Outlet closed, skipping order load');
         return;
       }
 
-      // if (!runnerStatus?.is_on_duty) {
-      //   logger.log('⏭️ Runner offline, skipping order load');
-      //   return;
-      // }
-
-      logger.log(`📦 Runner on duty, loading orders [${action}]`);
+      logger.log('📦 Loading orders...');
       const coords = await getLocationCoords();
 
       if (coords) {
-        await loadOrdersWithAction(coords.latitude, coords.longitude, action);
+        await loadOrders(coords.latitude, coords.longitude);
       }
     },
-    [outletClosed, runnerStatus?.is_on_duty]
+    []
   );
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -3124,11 +4016,12 @@ const displayOrders = useMemo(() => {
   // ══════════════════════════════════════════════════════════════════════════
 
   /**
-   * Listen to runner status changes (online/offline)
+   * ✅ STILL NEEDED: These update global state based on socket events
+   * OrdersContext handles the state updates automatically
    */
-  useRunnerSocket((event, data) => {
 
-if (!isFocused) return;
+  useRunnerSocket((event, data) => {
+    if (!isFocused) return;
 
     logger.log('📡 Runner status event:', event);
 
@@ -3143,30 +4036,23 @@ if (!isFocused) return;
 
       if (newStatus === 'offline') {
         logger.log('🔴 Runner went offline');
-        setRunnerStatus((prev: any) => ({ ...prev, is_on_duty: false }));
         toast('You are now offline', 'info', 3000);
       } else if (newStatus === 'online') {
         logger.log('🟢 Runner is now online');
-        setRunnerStatus((prev: any) => ({ ...prev, is_on_duty: true }));
         toast('You are now online', 'success', 3000);
-        loadOrdersIfOnDuty('socket');
+        loadOrdersIfOnDuty();
       }
     }
   });
 
-  /**
-   * Listen to outlet status (open/closed)
-   */
   useOutletSocket((event, data) => {
-
-if (!isFocused) return;
+    if (!isFocused) return;
 
     logger.log('📡 Outlet event:', event);
 
     if (event === SOCKET_EVENTS.OUTLET_CLOSED && data.id === outlet?.id) {
       logger.log('🔴 Outlet closed');
       setOutletClosed(true);
-      setRunnerStatus((prev: any) => ({ ...prev, is_on_duty: false }));
       toast(`${data?.name || 'Outlet'} is now closed`, 'alert', 5000);
     }
 
@@ -3175,49 +4061,39 @@ if (!isFocused) return;
       setOutletClosed(false);
       toast(`${data?.name || 'Outlet'} is now open!`, 'success', 3000);
     }
+
+if (event === SOCKET_EVENTS.OUTLET_UPDATED) {
+  logger.log("==data===",data);
+  updateOutlet({
+  name:data.name
+});
+}
+
   });
 
-  /**
-   * Listen to order status updates (ready, assigned, accepted)
-   */
   useOrderSocket((event, data) => {
-
     if (!isFocused) return;
 
     logger.log('📡 Order event:', event);
 
     if (event === SOCKET_EVENTS.ORDER_READY) {
-      const orderId = data.orderId || data.order_id || data.id;
-
       if (isPerformingActionRef.current) {
         logger.log('⏭️ Skipping order ready - action in progress');
         isPerformingActionRef.current = false;
         return;
       }
 
-      // toast(
-      //   `Order #${orderId} is ready for pickup!`,
-      //   'success',
-      //   5000,
-      //   () => {
-      //     // navigation.navigate('CustomerInfoScreen', {
-      //     //   orderId,
-      //     // });
-      //   }
-      // );
-
-      loadOrdersIfOnDuty('socket');
+      loadOrdersIfOnDuty();
     }
 
     if (event === SOCKET_EVENTS.ORDER_ASSIGNED && data.runnerId !== user?.id) {
       logger.log('📦 Order assigned to another runner');
-    }else if(event === SOCKET_EVENTS.ORDER_ASSIGNED){
+    } else if (event === SOCKET_EVENTS.ORDER_ASSIGNED) {
       const orderId = data.orderId || data.order_id || data.id;
       logger.log('📦 Order assigned to this runner');
-      //loadOrdersIfOnDuty('socket');
-       navigation.navigate('CustomerInfoScreen', {
-            orderId,
-          });
+      navigation.navigate('CustomerInfoScreen', {
+        orderId,
+      });
     }
 
     if (event === SOCKET_EVENTS.ORDER_ACCEPTED) {
@@ -3226,7 +4102,7 @@ if (!isFocused) return;
         isPerformingActionRef.current = false;
         return;
       }
-      loadOrdersIfOnDuty('socket');
+      loadOrdersIfOnDuty();
     }
   });
 
@@ -3242,59 +4118,9 @@ if (!isFocused) return;
   });
 
   // ══════════════════════════════════════════════════════════════════════════
-  // EFFECTS - INITIALIZATION
-  // ══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Initialize home screen on first mount
-   * Loads runner status and orders
-   */
-  useEffect(() => {
-    const initialize = async () => {
-      if (hasInitializedRef.current) {
-        logger.log('⏭️ Already initialized');
-        return;
-      }
-
-      logger.log('🚀 Initializing HomeScreen...');
-      hasInitializedRef.current = true;
-
-      try {
-        // Load runner status
-        const status = await loadRunnerStatus((assignment: any) => {
-          logger.log('➡️ Navigating to active assignment');
-          navigation.navigate('CustomerInfoScreen', { order: assignment });
-        });
-
-        // Use preloaded orders if available, otherwise load from API
-        if (preLoadedOrders && preLoadedOrders.length > 0) {
-          logger.log('✅ Using preloaded orders:', preLoadedOrders.length);
-        } else if (status?.is_on_duty && !outletClosed) {
-          const coords = await getLocationCoords();
-          if (coords) {
-            await loadOrdersWithAction(coords.latitude, coords.longitude, 'initial');
-          }
-        } else {
-          logger.log('ℹ️ Runner offline or outlet closed, no orders loaded');
-        }
-      } catch (error) {
-        logger.error('❌ Initialization error:', error);
-      } finally {
-        initialLoadCompleteRef.current = true;
-      }
-    };
-
-    initialize();
-  }, []);
-
-  // ══════════════════════════════════════════════════════════════════════════
   // EFFECTS - APP STATE CHANGES
   // ══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * Reload orders when app comes to foreground
-   * Prevents excessive API calls with debouncing
-   */
   useEffect(() => {
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription.remove();
@@ -3311,7 +4137,6 @@ if (!isFocused) return;
       return;
     }
 
-    // Debounce foreground fetch (max once per 10 seconds)
     const now = Date.now();
     if (now - lastForegroundFetchRef.current < 10000) {
       logger.log('⏭️ Too soon to fetch');
@@ -3328,7 +4153,7 @@ if (!isFocused) return;
       });
 
       if (status?.is_on_duty && !outletClosed) {
-        await loadOrdersIfOnDuty('socket');
+        await loadOrdersIfOnDuty();
       }
     } catch (error) {
       logger.error('❌ Foreground refresh error:', error);
@@ -3339,9 +4164,6 @@ if (!isFocused) return;
   // EFFECTS - SCREEN FOCUS
   // ══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * Reload orders when screen comes into focus
-   */
   useFocusEffect(
     useCallback(() => {
       if (!initialLoadCompleteRef.current) {
@@ -3358,7 +4180,7 @@ if (!isFocused) return;
           });
 
           if (status?.is_on_duty && !outletClosed) {
-            await loadOrdersIfOnDuty('socket');
+            await loadOrdersIfOnDuty();
           }
         } catch (error) {
           logger.error('❌ Focus reload error:', error);
@@ -3366,7 +4188,7 @@ if (!isFocused) return;
       };
 
       reloadOnFocus();
-    }, [navigation])//outletClosed, loadOrdersIfOnDuty, loadRunnerStatus, 
+    }, [])
   );
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -3374,7 +4196,7 @@ if (!isFocused) return;
   // ══════════════════════════════════════════════════════════════════════════
 
   /**
-   * Pull-to-refresh handler
+   * Pull-to-refresh: Use smart cache-aware sync
    */
   const onRefresh = useCallback(async () => {
     if (!runnerStatus?.is_on_duty || outletClosed) {
@@ -3386,17 +4208,15 @@ if (!isFocused) return;
     setIsRefreshing(true);
 
     try {
-      const coords = await getLocationCoords();
-      if (coords) {
-        await loadOrdersWithAction(coords.latitude, coords.longitude, 'manual');
-      }
+       const coords = await getLocationCoords();
+      await syncOrders(coords?.latitude, coords?.longitude); // Smart cache check
     } finally {
       setIsRefreshing(false);
     }
-  }, [runnerStatus?.is_on_duty, outletClosed, getLocationCoords, loadOrdersWithAction]);
+  }, [runnerStatus?.is_on_duty]);
 
   /**
-   * Toggle runner duty (online/offline)
+   * Toggle duty
    */
   const handleTakeBreak = useCallback(async () => {
     if (outletClosed && !runnerStatus?.is_on_duty) {
@@ -3409,28 +4229,22 @@ if (!isFocused) return;
 
     try {
       const coords = await getLocationCoords();
-      await toggleRunnerDuty(
-        coords?.latitude,
-        coords?.longitude,
-        (assignment: any) => {
-          navigation.navigate('CustomerInfoScreen', { order: assignment });
-        }
-      );
+      await toggleRunnerDuty(coords?.latitude, coords?.longitude, (assignment: any) => {
+        navigation.navigate('CustomerInfoScreen', { order: assignment });
+      });
     } finally {
       setTimeout(() => {
         isPerformingActionRef.current = false;
       }, 2000);
     }
-  }, [outletClosed, runnerStatus?.is_on_duty, getLocationCoords, toggleRunnerDuty, navigation, toast]);
+  }, [outletClosed, runnerStatus?.is_on_duty]);
 
   /**
-   * Open order detail modal
+   * Open order modal
    */
   const handlePressAcceptOrder = useCallback(
     (orderId: number) => {
-      const order =
-        preLoadedOrders?.find((o: any) => o.id === orderId) ||
-        orders.find((o) => o.id === orderId);
+      const order = orders.find((o) => o.id === orderId);
 
       if (!order) {
         logger.warn('⚠️ Order not found:', orderId);
@@ -3440,11 +4254,11 @@ if (!isFocused) return;
       setSelectedOrder(order);
       setShowOrderModal(true);
     },
-    [preLoadedOrders, orders]
+    [orders]
   );
 
   /**
-   * Accept selected order
+   * Accept order
    */
   const onPressAccept = useCallback(async () => {
     if (!selectedOrder?.id) {
@@ -3465,7 +4279,7 @@ if (!isFocused) return;
         },
         () => {
           logger.log('📦 Order already assigned, refreshing');
-          loadOrdersIfOnDuty('socket');
+          loadOrdersIfOnDuty();
         }
       );
     } finally {
@@ -3474,14 +4288,14 @@ if (!isFocused) return;
       }, 2000);
       setShowOrderModal(false);
     }
-  }, [selectedOrder, handleAcceptOrder, loadOrdersIfOnDuty, navigation]);
+  }, [selectedOrder]);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // RENDER - CONDITIONAL STATES
+  // RENDER
   // ══════════════════════════════════════════════════════════════════════════
 
   const renderOrdersList = () => {
-    if (showShimmer) {
+    if (isLoadingOrders) {
       return (
         <View>
           <OrderCardShimmer />
@@ -3491,13 +4305,13 @@ if (!isFocused) return;
       );
     }
 
-    if (displayOrders.length === 0) {
+    if (orders.length === 0) {
       return <EmptyState title="No orders available" subtitle="New orders will appear here" />;
     }
 
     return (
       <FlashList
-        data={displayOrders}
+        data={orders}
         estimatedItemSize={100}
         removeClippedSubviews
         keyExtractor={(item) => String(item.id)}
@@ -3544,15 +4358,10 @@ if (!isFocused) return;
     }
   };
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // RENDER - MAIN COMPONENT
-  // ══════════════════════════════════════════════════════════════════════════
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
-      {/* Header */}
       <CustomHeaderHome
         profileImage={user?.image_url}
         displayName={user?.display_name}
@@ -3562,7 +4371,6 @@ if (!isFocused) return;
         onPress={() => navigation.navigate('ProfileScreen')}
       />
 
-      {/* Date/Duty Card */}
       <View style={styles.headerSection}>
         <DateCard
           date={formatDate(runnerStatus?.last_clock_in)}
@@ -3573,7 +4381,6 @@ if (!isFocused) return;
         />
       </View>
 
-      {/* Orders List */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
@@ -3581,7 +4388,7 @@ if (!isFocused) return;
         scrollEnabled={screenState === 'orders'}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing || showShimmer}
+            refreshing={isRefreshing || isLoadingOrders}
             onRefresh={onRefresh}
             colors={[Colors.orange]}
             tintColor={Colors.orange}
@@ -3592,7 +4399,6 @@ if (!isFocused) return;
         {renderContentState()}
       </ScrollView>
 
-      {/* Order Detail Modal */}
       <BottomGradientModal
         visible={showOrderModal}
         onClose={() => setShowOrderModal(false)}
@@ -3608,7 +4414,6 @@ if (!isFocused) return;
         />
       </BottomGradientModal>
 
-      {/* Permission Modal */}
       <PermissionFlowModal
         visible={showPermissionModal}
         onComplete={() => setShowPermissionModal(false)}
@@ -3621,9 +4426,6 @@ if (!isFocused) return;
 // SUBCOMPONENTS
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Empty state component
- */
 const EmptyState = ({ title, subtitle }: { title: string; subtitle: string }) => (
   <View style={styles.emptyContainer}>
     <Text style={styles.emptyTitle}>{title}</Text>
@@ -3631,9 +4433,6 @@ const EmptyState = ({ title, subtitle }: { title: string; subtitle: string }) =>
   </View>
 );
 
-/**
- * Order detail modal content
- */
 const OrderDetailModal = ({
   order,
   listHeight,
@@ -3648,7 +4447,6 @@ const OrderDetailModal = ({
   insets: any;
 }) => (
   <View style={styles.modalContent}>
-    {/* Order Card */}
     <OrderCard
       orderID={order?.id}
       distance={order?.distance ?? '—'}
@@ -3661,12 +4459,10 @@ const OrderDetailModal = ({
       locationUnderline={false}
     />
 
-    {/* Item Count */}
     <Text style={styles.itemCountText}>
       No. of Items: {order?.order_lines?.length ?? 0}
     </Text>
 
-    {/* Items List */}
     <View style={[styles.listContainer, { height: listHeight }]}>
       <FlashList
         data={
@@ -3687,7 +4483,6 @@ const OrderDetailModal = ({
       />
     </View>
 
-    {/* Accept Button */}
     <View style={[styles.buttonFooter, { paddingBottom: insets.bottom }]}>
       <CustomButton
         title="Accept Order"
@@ -3703,18 +4498,15 @@ const OrderDetailModal = ({
 // ═════════════════════════════════════════════════════════════════════════════
 
 const styles = StyleSheet.create({
-  // Container
   container: {
     flex: 1,
     backgroundColor: Colors.white,
   },
 
-  // Header Section
   headerSection: {
     paddingHorizontal: ms(16),
   },
 
-  // Scroll View
   scrollView: {
     flex: 1,
   },
@@ -3723,7 +4515,6 @@ const styles = StyleSheet.create({
     paddingBottom: vs(20),
   },
 
-  // Empty State
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
@@ -3744,7 +4535,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: ms(32),
   },
 
-  // Modal Content
   modalContent: {
     flex: 1,
     paddingHorizontal: ms(16),
@@ -3764,7 +4554,6 @@ const styles = StyleSheet.create({
     color: Colors.black1,
   },
 
-  // Button
   buttonFooter: {
     paddingTop: vs(12),
   },

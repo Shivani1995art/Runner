@@ -15,37 +15,11 @@ import { useSocket } from './src/hooks/useSocketListener'
 import { SOCKET_CONFIG } from './src/Config/socket'
 import { SocketProvider } from './src/context/SocketProvider'
 import LoadingScreen from './src/components/modals/Loadingscreen'
+import { OrdersProvider } from './src/context/OrdersContext'
 
 
 const App = () => {
 
-//  const { user, isLogin } = useAuth();
-
-//    const { connect, disconnect, isConnected, getState } = useSocket({
-//     url: SOCKET_CONFIG.getUrl(),
-//     userId: user?.id,
-//     userToken: user?.token,
-//     autoConnect: true,
-//     onConnect: () => {
-//       console.log('✅ Socket connected');
-//     },
-//     onDisconnect: () => {
-//       console.log('❌ Socket disconnected');
-//     },
-//     onError: (error) => {
-//       console.error('❌ Socket error:', error);
-//     },
-//   });
-
-
-//   // Connect when user logs in
-//   useEffect(() => {
-//     if (isLogin && user) {
-//       connect();
-//     } else {
-//       disconnect();
-//     }
-//   }, [isLogin, user]);
 
   return (
     <GestureHandlerRootView style={styles.AppContainer}>
@@ -55,21 +29,26 @@ const App = () => {
        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       {/* <Routes /> */}
        <NetworkProvider>
+         <ToastProvider>
         <AuthProvider>
            <SocketProvider>
+
+            <OrdersProvider cacheTimeoutMs={30000}>
+           
           <LoaderProvider>
-             <ToastProvider>
+            
               <KeyboardProvider>
-              {/* <LoadingScreen message="Loading your orders..." /> */}
     <Routes />
 </KeyboardProvider>
  
             <Toast />
-             </ToastProvider>
+           
           
           </LoaderProvider>
+           </OrdersProvider>
            </SocketProvider>
         </AuthProvider>
+        </ToastProvider>
        </NetworkProvider>
       
     </GestureHandlerRootView>

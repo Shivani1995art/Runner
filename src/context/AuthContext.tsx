@@ -202,8 +202,8 @@ export interface UserOutlet {
 }
 
 export interface Outlet {
-  id: number;
-  name: string;
+  id?: number;
+  name?: string;
   image_url?: string | null;
   [key: string]: any;
 }
@@ -223,6 +223,7 @@ export interface AuthContextType {
   setIsFirstLogin: (first: boolean) => void;
   // ── Refresh user in context + AsyncStorage from anywhere ─────────────────
   updateUser: (userData: User) => Promise<void>;
+  updateOutlet: (outletData: Partial<Outlet>) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -299,6 +300,21 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     }
   };
 
+const updateOutlet = async (outletData: Partial<Outlet>) => {
+  try {
+    const mergedOutlet = { ...outlet, ...outletData };
+
+    setOutlet(mergedOutlet);
+
+    await AsyncStorage.setItem(
+      'OUTLET_DATA',
+      JSON.stringify(mergedOutlet)
+    );
+  } catch (e) {
+    logger.log('updateOutlet error', e);
+  }
+};
+
   const logout = async () => {
     logger.log('logout called==>');
     clearToken();
@@ -328,7 +344,8 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         setIsLoading,
         isFirstLogin,
         setIsFirstLogin,
-        updateUser,   // ← new
+        updateUser,  
+        updateOutlet, // ← new
       }}
     >
       {children}

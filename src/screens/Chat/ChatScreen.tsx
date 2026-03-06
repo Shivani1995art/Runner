@@ -1369,12 +1369,12 @@ navigation.navigate('CustomerInfoScreen');
             </View>
           )}
           {/* DYNAMIC DOT COLOR based on customer status */}
-          <View
+          {/* <View
             style={[
               styles.onlineDot,
               { backgroundColor: customerStatus === 'online' ? Colors.green2 : '#999' },
             ]}
-          />
+          /> */}
         </View>
 
         <View style={styles.headerInfo}>
