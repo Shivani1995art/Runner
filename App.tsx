@@ -11,15 +11,20 @@ import { NetworkProvider } from './src/context/NetworkProvider'
 import { ToastProvider } from './src/hooks/ToastProvider'
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useAuth } from './src/hooks/useAuth'
-import { useSocket } from './src/hooks/useSocketListener'
 import { SOCKET_CONFIG } from './src/Config/socket'
 import { SocketProvider } from './src/context/SocketProvider'
 import LoadingScreen from './src/components/modals/Loadingscreen'
 import { OrdersProvider } from './src/context/OrdersContext'
-
+import notifee from '@notifee/react-native';
 
 const App = () => {
+useEffect(() => {
+  const clearNotifications = async () => {
+    await notifee.cancelAllNotifications();
+  };
 
+  clearNotifications();
+}, []);
 
   return (
     <GestureHandlerRootView style={styles.AppContainer}>
@@ -38,6 +43,7 @@ const App = () => {
           <LoaderProvider>
             
               <KeyboardProvider>
+               {/* <LoadingScreen message="Loading..." /> */}
     <Routes />
 </KeyboardProvider>
  

@@ -381,19 +381,266 @@
 //     },
 // });
 
+// import React, { useRef, useMemo, useCallback } from "react";
+// import { StyleSheet, View, Text } from "react-native";
+// import BottomSheet, {
+//   BottomSheetBackdrop,
+//   BottomSheetScrollView,
+// } from "@gorhom/bottom-sheet";
+// import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// import GradientContainer from "../Gradient/GradientContainer";
+// import { ms, vs, fontSize } from "../../utils/responsive";
+// import Colors from "../../utils/colors";
+// import { Typography } from "../../utils/typography";
+// import RenderItem from "../RenderItem/RenderItem";
+// import CustomButton from "../Buttons/CustomButton";
+
+// interface RunnerOrderItemsModalProps {
+//   visible: boolean;
+//   onClose: () => void;
+//   orderItems: any[];
+//   isPickedUp?: boolean;
+//   isPickingUp?: boolean;
+//   isDelivering?: boolean;
+//   onPickup?: () => void;
+//   onDeliver?: () => void;
+//   maxHeightPercentage?: number;
+//   minHeightPercentage?: number;
+// }
+
+// const RunnerOrderItemsModal = ({
+//   visible,
+//   onClose,
+//   orderItems = [],
+//   isPickedUp = false,
+//   isPickingUp = false,
+//   isDelivering = false,
+//   onPickup,
+//   onDeliver,
+//   maxHeightPercentage = 0.55,
+//   minHeightPercentage = 0.15,
+// }: RunnerOrderItemsModalProps) => {
+//   const bottomSheetRef = useRef<BottomSheet>(null);
+//   const insets = useSafeAreaInsets();
+
+//   const itemCount = orderItems?.length ?? 0;
+
+//   // Snap points: peek and full
+//   const snapPoints = useMemo(
+//     () => [
+//       `${Math.round(minHeightPercentage * 100)}%`, // peek
+//       `${Math.round(maxHeightPercentage * 100)}%`, // full
+//     ],
+//     [minHeightPercentage, maxHeightPercentage]
+//   );
+
+//   const renderBackdrop = useCallback(
+//     (props: any) => (
+//       <BottomSheetBackdrop
+//         {...props}
+//         appearsOnIndex={1}       // backdrop only when fully open
+//         disappearsOnIndex={0}    // fade out when at peek
+//         pressBehavior="collapse" // tap backdrop → collapse to peek
+//         opacity={0.4}
+//       />
+//     ),
+//     []
+//   );
+
+//   return (
+//     <BottomSheet
+//       ref={bottomSheetRef}
+//       index={visible ? 0 : -1}
+//       snapPoints={snapPoints}
+//       enablePanDownToClose={false}
+//       onClose={onClose}
+//       handleComponent={() => null}
+//       backgroundStyle={styles.transparentBg}
+//       backdropComponent={renderBackdrop}
+//       enableHandlePanningGesture={true}
+//       enableContentPanningGesture={true}
+//       android_keyboardInputMode="adjustResize"
+//       keyboardBehavior="fillParent"
+//       keyboardBlurBehavior="restore"
+//       animateOnMount={true}
+//     >
+//       <GradientContainer borderRadius={ms(40)} style={styles.gradientBox}>
+//         {/* Scrollable Content */}
+//         <BottomSheetScrollView
+//           style={styles.scrollView}
+//           contentContainerStyle={styles.scrollContent}
+//           showsVerticalScrollIndicator={true}
+//           bounces={true}
+//         >
+//           {/* Drag Handle */}
+//           <View style={styles.modalLine} />
+
+//           {/* Section Title */}
+//           <Text style={styles.sectionTitle}>
+//             {isPickedUp ? 'Order Details' : 'Order Items'}
+//             <Text style={styles.nOftext}> ({itemCount} items)</Text>
+//           </Text>
+
+//           <View style={styles.dottedLine} />
+
+//           {/* Order Items List */}
+//           {orderItems.length === 0 ? (
+//             <View style={styles.emptyContainer}>
+//               <Text style={styles.emptyText}>No items</Text>
+//             </View>
+//           ) : (
+//             <View style={styles.itemsContainer}>
+//               {orderItems.map((item: any, index: number) => (
+//                  <RenderItem  key={item.id || index} item={item} index={index} />
+//                 // <RenderItem
+//                 //   key={item.id || index}
+//                 //   item={{
+//                 //     id: item.id,
+//                 //     quantity: item.quantity,
+//                 //     price: item.line_total_cents,
+//                 //     menu_item: {
+//                 //       name: item.MenuItem?.name,
+//                 //       description: item.MenuItem?.description,
+//                 //       image_url: item.MenuItem?.image_url,
+//                 //       item_type: item.MenuItem?.item_type,
+//                 //     },
+//                 //     options: [],
+//                 //   }}
+//                 //   index={index}
+//                 // />
+//               ))}
+//             </View>
+//           )}
+//         </BottomSheetScrollView>
+
+//         {/* Fixed CTA Button at Bottom */}
+//         <View style={[styles.ctaContainer, { paddingBottom: vs(20) + insets.bottom }]}>
+//           {!isPickedUp ? (
+//             <CustomButton
+//               title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
+//               style={[styles.pickupButton, isPickingUp && styles.buttonDisabled]}
+//               disabled={isPickingUp}
+//               onPress={onPickup}
+//             />
+//           ) : (
+//             <CustomButton
+//               title={isDelivering ? 'Delivering...' : 'Mark as Delivered'}
+//               style={[styles.deliverButton, isDelivering && styles.buttonDisabled]}
+//               disabled={isDelivering}
+//               onPress={onDeliver}
+//             />
+//           )}
+//         </View>
+//       </GradientContainer>
+//     </BottomSheet>
+//   );
+// };
+
+// export default RunnerOrderItemsModal;
+
+// const styles = StyleSheet.create({
+//   transparentBg: {
+//     backgroundColor: "transparent",
+//     shadowColor: "transparent",
+//     elevation: 0,
+//   },
+//   gradientBox: {
+//     flex: 1,
+//     borderTopLeftRadius: ms(40),
+//     borderTopRightRadius: ms(40),
+//     overflow: "hidden",
+//   },
+//   scrollView: {
+//     flex: 1,
+//   },
+//   scrollContent: {
+//     flexGrow: 1,
+//     paddingBottom: vs(12), // Extra space for fixed button at bottom
+//   },
+//   modalLine: {
+//     width: ms(50),
+//     height: vs(4),
+//     backgroundColor: Colors.black,
+//     alignSelf: "center",
+//     borderRadius: ms(10),
+//     marginTop: vs(10),
+//     marginBottom: vs(4),
+//   },
+//   sectionTitle: {
+//     fontFamily: Typography.SemiBold.fontFamily,
+//     fontSize: fontSize(14),
+//     paddingHorizontal: ms(20),
+//     paddingVertical: vs(10),
+//   },
+//   nOftext: {
+//     color: Colors.borderColor1,
+//     fontSize: fontSize(14),
+//     fontFamily: Typography.Medium.fontFamily,
+//   },
+//   dottedLine: {
+//     borderBottomWidth: 1.4,
+//     borderBottomColor: '#E4E4EB',
+//     borderStyle: 'dashed',
+//     marginVertical: ms(4),
+//     marginHorizontal: ms(16),
+//     marginBottom: vs(8),
+//   },
+//   emptyContainer: {
+//     paddingVertical: vs(40),
+//     alignItems: "center",
+//   },
+//   emptyText: {
+//     fontSize: fontSize(14),
+//     fontFamily: Typography.Regular.fontFamily,
+//     color: Colors.borderColor1,
+//   },
+//   itemsContainer: {
+//     paddingHorizontal: ms(4),
+//   },
+//   // Fixed CTA Button at Bottom
+//   ctaContainer: {
+//     position: 'absolute',
+//     bottom: 0,
+//     left: 0,
+//     right: 0,
+//     backgroundColor: 'transparent',
+//     paddingHorizontal: ms(16),
+//    paddingTop: vs(8),
+//   },
+//   pickupButton: {
+//     backgroundColor: Colors.orange,
+//     borderRadius: ms(10),
+//     height: vs(50),
+//     width: '100%',
+//     alignSelf: 'center',
+//   },
+//   deliverButton: {
+//     backgroundColor: Colors.green2,
+//     borderRadius: ms(10),
+//     height: vs(50),
+//     width: '100%',
+//     alignSelf: 'center',
+//   },
+//   buttonDisabled: {
+//     opacity: 0.7,
+//   },
+// });
+
+
 import React, { useRef, useMemo, useCallback } from "react";
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View, Text, Dimensions } from "react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import GradientContainer from "../Gradient/GradientContainer";
-import { ms, vs, fontSize } from "../../utils/responsive";
+import { ms, vs, fontSize, hp } from "../../utils/responsive";
 import Colors from "../../utils/colors";
 import { Typography } from "../../utils/typography";
 import RenderItem from "../RenderItem/RenderItem";
 import CustomButton from "../Buttons/CustomButton";
+import { logger } from "../../utils/logger";
 
 interface RunnerOrderItemsModalProps {
   visible: boolean;
@@ -425,22 +672,38 @@ const RunnerOrderItemsModal = ({
 
   const itemCount = orderItems?.length ?? 0;
 
-  // Snap points: peek and full
-  const snapPoints = useMemo(
-    () => [
+  // ✅ FIXED: Calculate dynamic height based on item count
+  // Show 3 items before scrolling
+  const ITEM_HEIGHT = vs(90); // Approximate height of one item
+  const HEADER_HEIGHT = vs(120); // Handle + Title + Divider
+  const BUTTON_HEIGHT = vs(70); // Button height + padding
+  const MAX_ITEMS_VISIBLE = 3;
+
+  // ✅ Dynamic snap points based on items
+  const snapPoints = useMemo(() => {
+    const itemsToShow = Math.min(itemCount, MAX_ITEMS_VISIBLE);
+    const contentHeight = HEADER_HEIGHT + (itemsToShow * ITEM_HEIGHT) + BUTTON_HEIGHT;
+    const windowHeight = Dimensions.get('window').height;
+    
+    // Percentage based on content
+    const contentPercentage = (contentHeight / windowHeight) * 100;
+    const fullPercentage = Math.min(contentPercentage + 5, 48); // Cap at 85%
+    
+    logger.log(`📐 Modal Heights: items=${itemCount}, contentHeight=${contentHeight}, percentage=${fullPercentage}%`);
+
+    return [
       `${Math.round(minHeightPercentage * 100)}%`, // peek
-      `${Math.round(maxHeightPercentage * 100)}%`, // full
-    ],
-    [minHeightPercentage, maxHeightPercentage]
-  );
+      `${Math.min(Math.round(fullPercentage), 80)}%`, // full (max 80%)
+    ];
+  }, [itemCount]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
       <BottomSheetBackdrop
         {...props}
-        appearsOnIndex={1}       // backdrop only when fully open
-        disappearsOnIndex={0}    // fade out when at peek
-        pressBehavior="collapse" // tap backdrop → collapse to peek
+        appearsOnIndex={1}
+        disappearsOnIndex={0}
+        pressBehavior="collapse"
         opacity={0.4}
       />
     ),
@@ -465,70 +728,62 @@ const RunnerOrderItemsModal = ({
       animateOnMount={true}
     >
       <GradientContainer borderRadius={ms(40)} style={styles.gradientBox}>
-        {/* Scrollable Content */}
-        <BottomSheetScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={true}
-          bounces={true}
-        >
-          {/* Drag Handle */}
-          <View style={styles.modalLine} />
+        {/* ✅ FIXED: Main flex container */}
+        <View style={styles.containerFlex}>
+          {/* Header - Fixed at top */}
+          <View style={styles.headerSection}>
+            <View style={styles.modalLine} />
+            <Text style={styles.sectionTitle}>
+              {isPickedUp ? 'Order Details' : 'Order Items'}
+              <Text style={styles.nOftext}> ({itemCount} items)</Text>
+            </Text>
+            <View style={styles.dottedLine} />
+          </View>
 
-          {/* Section Title */}
-          <Text style={styles.sectionTitle}>
-            {isPickedUp ? 'Order Details' : 'Order Items'}
-            <Text style={styles.nOftext}> ({itemCount} items)</Text>
-          </Text>
+          {/* Scrollable Items - Fixed height */}
+          <View style={styles.itemsListWrapper}>
+            {orderItems.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No items</Text>
+              </View>
+            ) : (
+              <BottomSheetScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={true}
+                bounces={true}
+              >
+                <View style={styles.itemsContainer}>
+                  {orderItems.map((item: any, index: number) => (
+                    <RenderItem 
+                      key={item.id || index} 
+                      item={item} 
+                      index={index} 
+                    />
+                  ))}
+                </View>
+              </BottomSheetScrollView>
+            )}
+          </View>
 
-          <View style={styles.dottedLine} />
-
-          {/* Order Items List */}
-          {orderItems.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No items</Text>
-            </View>
-          ) : (
-            <View style={styles.itemsContainer}>
-              {orderItems.map((item: any, index: number) => (
-                <RenderItem
-                  key={item.id || index}
-                  item={{
-                    id: item.id,
-                    quantity: item.quantity,
-                    price: item.line_total_cents,
-                    menu_item: {
-                      name: item.MenuItem?.name,
-                      description: item.MenuItem?.description,
-                      image_url: item.MenuItem?.image_url,
-                      item_type: item.MenuItem?.item_type,
-                    },
-                    options: [],
-                  }}
-                  index={index}
-                />
-              ))}
-            </View>
-          )}
-        </BottomSheetScrollView>
-
-        {/* Fixed CTA Button at Bottom */}
-        <View style={[styles.ctaContainer, { paddingBottom: vs(20) + insets.bottom }]}>
-          {!isPickedUp ? (
-            <CustomButton
-              title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
-              style={[styles.pickupButton, isPickingUp && styles.buttonDisabled]}
-              disabled={isPickingUp}
-              onPress={onPickup}
-            />
-          ) : (
-            <CustomButton
-              title={isDelivering ? 'Delivering...' : 'Mark as Delivered'}
-              style={[styles.deliverButton, isDelivering && styles.buttonDisabled]}
-              disabled={isDelivering}
-              onPress={onDeliver}
-            />
-          )}
+          {/* Button - Fixed at bottom */}
+          <View style={[styles.ctaContainer, { paddingBottom: vs(12) + insets.bottom }]}>
+            {!isPickedUp ? (
+              <CustomButton
+                title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
+                style={[styles.pickupButton, isPickingUp && styles.buttonDisabled]}
+                disabled={isPickingUp}
+                onPress={onPickup}
+              />
+            ) : (
+              <CustomButton
+                title={isDelivering ? 'Delivering...' : 'Mark as Delivered'}
+                style={[styles.deliverButton, isDelivering && styles.buttonDisabled]}
+                disabled={isDelivering}
+                onPress={onDeliver}
+              />
+            )}
+          </View>
         </View>
       </GradientContainer>
     </BottomSheet>
@@ -549,12 +804,28 @@ const styles = StyleSheet.create({
     borderTopRightRadius: ms(40),
     overflow: "hidden",
   },
+  // ✅ Main container with flex layout
+  containerFlex: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  // ✅ FIXED: Header section - fixed at top
+  headerSection: {
+    paddingBottom: vs(8),
+  },
+  // ✅ FIXED: Items wrapper with limited height
+  itemsListWrapper: {
+    flex: 1,
+    minHeight: vs(100),
+    maxHeight: vs(270), // ✅ Limits to ~3 items height
+    overflow: 'hidden',
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: vs(100), // Extra space for fixed button at bottom
+    paddingBottom: vs(8),
   },
   modalLine: {
     width: ms(50),
@@ -570,6 +841,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize(14),
     paddingHorizontal: ms(20),
     paddingVertical: vs(10),
+    color: Colors.black1,
   },
   nOftext: {
     color: Colors.borderColor1,
@@ -596,15 +868,11 @@ const styles = StyleSheet.create({
   itemsContainer: {
     paddingHorizontal: ms(4),
   },
-  // Fixed CTA Button at Bottom
+  // ✅ FIXED: Button at bottom
   ctaContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'transparent',
     paddingHorizontal: ms(16),
-    paddingTop: vs(12),
+    paddingTop: vs(8),
+    backgroundColor: 'transparent',
   },
   pickupButton: {
     backgroundColor: Colors.orange,

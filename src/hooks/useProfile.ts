@@ -208,7 +208,7 @@ export const useProfile = () => {
       show();
       setIsLoadingProfile(true);
       const res = await getProfile();
-     // logger.log('fetchProfile res:', res);
+      logger.log('fetchProfile res:', res);
 
       if (res?.success) {
         setProfile(res.data);

@@ -404,6 +404,9 @@ const profileItems = [
 
   useFocusEffect(
     useCallback(() => {
+
+      logger.log('ProfileScreen user ==>', user);
+
        fetchProfile();
     fetchPerformance();
     }, [])

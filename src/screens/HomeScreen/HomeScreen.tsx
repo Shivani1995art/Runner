@@ -3964,7 +3964,7 @@ const HomeScreen = ({ navigation }: any) => {
 
       const access = await ensureLocationAccess();
       const gpsEnabled = await isLocationEnabled();
-
+   // logger.log('===access=====',access);
       if (access.status === 'NO_PERMISSION' || access.status === 'SERVICES_DISABLED') {
         logger.warn('⚠️ Location permission denied or disabled');
         setShowPermissionModal(true);
@@ -3973,6 +3973,7 @@ const HomeScreen = ({ navigation }: any) => {
 
       if (Platform.OS === 'android') {
         const locationData = await LocationService.getCurrentLocation();
+         logger.log('===access=====',locationData);
         return {
           latitude: locationData.latitude,
           longitude: locationData.longitude,
@@ -4067,6 +4068,10 @@ if (event === SOCKET_EVENTS.OUTLET_UPDATED) {
   updateOutlet({
   name:data.name
 });
+
+//loadOrdersIfOnDuty();
+
+
 }
 
   });
@@ -4166,10 +4171,10 @@ if (event === SOCKET_EVENTS.OUTLET_UPDATED) {
 
   useFocusEffect(
     useCallback(() => {
-      if (!initialLoadCompleteRef.current) {
-        logger.log('⏭️ Initial load not complete');
-        return;
-      }
+      // if (!initialLoadCompleteRef.current) {
+      //   logger.log('⏭️ Initial load not complete');
+      //   return;
+      // }
 
       logger.log('👀 Screen focused - reloading');
 
@@ -4209,7 +4214,7 @@ if (event === SOCKET_EVENTS.OUTLET_UPDATED) {
 
     try {
        const coords = await getLocationCoords();
-      await syncOrders(coords?.latitude, coords?.longitude); // Smart cache check
+      await loadOrders(coords?.latitude, coords?.longitude); // Smart cache check
     } finally {
       setIsRefreshing(false);
     }
@@ -4229,6 +4234,9 @@ if (event === SOCKET_EVENTS.OUTLET_UPDATED) {
 
     try {
       const coords = await getLocationCoords();
+   logger.log("coords-->",coords);
+
+
       await toggleRunnerDuty(coords?.latitude, coords?.longitude, (assignment: any) => {
         navigation.navigate('CustomerInfoScreen', { order: assignment });
       });
@@ -4483,7 +4491,7 @@ const OrderDetailModal = ({
       />
     </View>
 
-    <View style={[styles.buttonFooter, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.buttonFooter, { paddingBottom: insets.bottom + 6 }]}>
       <CustomButton
         title="Accept Order"
         style={styles.acceptButton}
@@ -4545,6 +4553,7 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
     minHeight: vs(60),
+    // maxHeight: vs(60),a
   },
   itemCountText: {
     paddingHorizontal: ms(16),

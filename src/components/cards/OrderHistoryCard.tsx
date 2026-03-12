@@ -259,22 +259,23 @@ const getDeliveryStatusText = (order: any) => {
             {/* Preview Items */}
             <View style={{ paddingHorizontal: ms(14) }}>
             {previewItems.map((item, index) => (
-                 <RenderItem
-                  key={item.id}
-                  index={index}
-                  item={{
-                    id:       item.id,
-                    quantity: item.quantity,
-                    price:    item.menu_item.price,
-                    menu_item: {
-                      name:        item.menu_item.name,
-                      description: item.menu_item.description,
-                      image_url:   item.menu_item.image_url,
-                      item_type:   item.menu_item.item_type,
-                    },
-                    options: [],
-                  }}
-                />
+               <RenderItem item={item} index={index} />
+                //  <RenderItem
+                //   key={item.id}
+                //   index={index}
+                //   item={{
+                //     id:       item.id,
+                //     quantity: item.quantity,
+                //     price:    item.menu_item.price,
+                //     menu_item: {
+                //       name:        item.menu_item.name,
+                //       description: item.menu_item.description,
+                //       image_url:   item.menu_item.image_url,
+                //       item_type:   item.menu_item.item_type,
+                //     },
+                //     options: [],
+                //   }}
+                // />
               ))}
 
               {order.items.length > PREVIEW_COUNT && (

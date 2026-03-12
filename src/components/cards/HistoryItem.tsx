@@ -3,14 +3,17 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import { ms, vs, fontSize, wp } from '../../utils/responsive';
 import Colors from '../../utils/colors';
 import { Typography } from '../../utils/typography';
+import { logger } from '../../utils/logger';
 
 const HistoryItem = ({ item, index }: { item: any; index: number }) => {
-  const menuItem = item?.MenuItem; // ✅ FIXED
-
+  const menuItem = item?.menu_item;
   const imageUrl = Array.isArray(menuItem?.image_url)
     ? menuItem.image_url[0]
     : menuItem?.image_url;
 
+  //  logger.log('item --->', item);
+
+//logger.log('item options--->', item.menu_item?.options);
   const warmShades = [
     '#fff4dc',
     '#fdeecf',
@@ -54,31 +57,53 @@ const HistoryItem = ({ item, index }: { item: any; index: number }) => {
           {menuItem?.name}
         </Text>
 
-        {/* 🔥 Add Instructions (since history data has it) */}
-        {item?.item_instructions && (
-          <Text style={styles.optionText}>
-            📝 {item.item_instructions}
-          </Text>
+        {/* 🔥 Add-Ons Section */}
+        {item.options?.length > 0 && (
+          <View style={styles.optionsContainer}>
+            {item.options.map((opt: any) => (
+              <Text key={opt.id} style={styles.optionText}>
+                + {opt.name}
+              </Text>
+            ))}
+          </View>
         )}
-
       </View>
 
     </View>
   );
 };
+
+export default HistoryItem;
+
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: ms(16),
+    marginHorizontal: ms(6),
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.cardbg,
     borderRadius: ms(12),
-    padding: ms(10),
-    marginBottom: vs(10),
+    padding: ms(4),
+    marginBottom: vs(8),
     gap: ms(10),
   },
+  optionsContainer: {
+  marginTop: vs(4),
+},
+
+optionText: {
+  fontSize: fontSize(11),
+  fontFamily: Typography.Regular.fontFamily,
+  color: Colors.borderColor1,
+},
+
   quantityBadge: {
+   // backgroundColor: Colors.orange,
+   // borderRadius: ms(6),
+    //paddingHorizontal: ms(8),
+   // paddingVertical: vs(4),
     minWidth: ms(36),
     alignItems: 'center',
+    paddingStart:wp(7)
   },
   quantityText: {
     fontSize: fontSize(12),
@@ -86,31 +111,28 @@ const styles = StyleSheet.create({
     color: Colors.black,
   },
   image: {
-    width: ms(50),
-    height: ms(50),
-    borderRadius: ms(25),
+    width: ms(44),
+    height: ms(44),
+    borderRadius: ms(22),
     backgroundColor: '#eee',
   },
   info: {
     flex: 1,
   },
   name: {
-    fontSize: fontSize(14),
+    fontSize: fontSize(13),
     fontFamily: Typography.SemiBold.fontFamily,
     color: Colors.black1,
   },
-  instructions: {
-    marginTop: vs(3),
+  options: {
     fontSize: fontSize(11),
     fontFamily: Typography.Regular.fontFamily,
     color: Colors.borderColor1,
+    marginTop: vs(2),
   },
   price: {
-    marginTop: vs(4),
     fontSize: fontSize(13),
     fontFamily: Typography.Bold.fontFamily,
     color: Colors.black1,
   },
 });
-
-export default HistoryItem;

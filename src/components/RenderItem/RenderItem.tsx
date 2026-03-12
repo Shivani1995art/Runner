@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import { ms, vs, fontSize, wp } from '../../utils/responsive';
 import Colors from '../../utils/colors';
 import { Typography } from '../../utils/typography';
+import { logger } from '../../utils/logger';
 
 const RenderItem = ({ item, index }: { item: any; index: number }) => {
   const menuItem = item?.menu_item;
@@ -10,6 +11,9 @@ const RenderItem = ({ item, index }: { item: any; index: number }) => {
     ? menuItem.image_url[0]
     : menuItem?.image_url;
 
+    logger.log('item --->', item);
+
+logger.log('item options--->', item.menu_item?.options);
   const warmShades = [
     '#fff4dc',
     '#fdeecf',

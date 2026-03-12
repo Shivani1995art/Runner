@@ -1,139 +1,119 @@
-// import axios from "axios";
-// import { API_BASE_URL } from "../Config/env";
-// import { logger } from "../utils/logger";
-// import { getToken } from "../utils/token";
-// import { handleApiError } from "../utils/errorHandler";
-
-
-// export const apiClient = axios.create({
-//   baseURL: API_BASE_URL,
-//   timeout:  15000,
-//   headers: { 'Content-Type': 'application/json' },
-// });
-// let logoutFunction = null;
-// export const setLogoutHandler = (logoutRef) => {
-//   logger.log("current logout ===>",logoutRef)
-//   logoutFunction = logoutRef;
-// };
-// apiClient.interceptors.request.use(
-//   async (config) => {
-//     const token = await getToken();
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     logger.log("Request Config:", config);
-//     return config;
-//   },
-//   (error) => Promise.reject(error)
-// );
-
-// // Response interceptor: handle errors globally
-// apiClient.interceptors.response.use(
-//   (response) => response,
-//  async (error) => {
-//     handleApiError(error);
-
-//     // Optional: handle 401 globally here (e.g., logout)
-//     if (error.response?.status === 401) {
-//       logger.warn("⚠️ 401 Unauthorized - Session expired, logging out...");
-//       logger.log("logoutFunction:", logoutFunction);
-//       logger.log("logoutFunction.current:", logoutFunction?.current);
-      
-//       if (logoutFunction && typeof logoutFunction.current === 'function') {
-//         logger.log("🔥 Calling logout function...");
-//         await logoutFunction.current();
-//         logger.log("✅ Logout completed");
-//       }else{
-//         logger.error("Logout function not properly set!");
-//       }
-//     }
-
-//     return Promise.reject(error);
-//   }
-// );
 import axios from "axios";
-import { API_BASE_URL } from "../Config/env";
-import { logger } from "../utils/logger";
 import { getToken } from "../utils/token";
 import { handleApiError } from "../utils/errorHandler";
+import { API_BASE_URL } from "../Config/env";
+import { logger } from "../utils/logger";
 
+// ✅ Global references
+let authContextRef: any = null;
+let navigationRef: any = null;
 
+// ✅ Export functions to set handlers
+export const setAuthContextRef = (ref: any) => {
+  authContextRef = ref;
+  logger.log("✅ Auth context ref set");
+};
+
+export const setNavigationRef = (ref: any) => {
+  navigationRef = ref;
+  logger.log("✅ Navigation ref set");
+};
+
+// ✅ Create axios instance
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
-  headers: { 'Content-Type': 'application/json' },
+  timeout: 20000,
 });
 
-let logoutFunction = null;
-export const setLogoutHandler = (logoutRef) => {
-  logger.log("current logout ===>", logoutRef);
-  logoutFunction = logoutRef;
-};
+// ✅ Flag to prevent multiple logout calls
+let isLoggingOut = false;
+
+// ═════════════════════════════════════════════════════════════════════════════
+// REQUEST INTERCEPTOR - Add auth token
+// ═════════════════════════════════════════════════════════════════════════════
 
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const token = await getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      logger.log("📤 Request:", config.method?.toUpperCase(), config.url);
+      return config;
+    } catch (error) {
+      logger.error("❌ Request interceptor error:", error);
+      return Promise.reject(error);
     }
-
-    // ── Auto-detect FormData and set correct Content-Type ──────────────────
-    // When sending FormData (file uploads), delete Content-Type so axios
-    // sets multipart/form-data with the correct boundary automatically.
-    // For everything else, keep application/json as default.
-    // ───────────────────────────────────────────────────────────────────────
-    // if (config.data instanceof FormData) {
-    //   delete config.headers['Content-Type'];
-    // }
-
-    logger.log("Request Config:", config);
-    return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: handle errors globally
-// Response interceptor: handle errors globally
+// ═════════════════════════════════════════════════════════════════════════════
+// RESPONSE INTERCEPTOR - Handle errors & token expiration
+// ═════════════════════════════════════════════════════════════════════════════
+
 apiClient.interceptors.response.use(
-  (response) => {
-    logger.log("Response Data:", response);
-    const data = response.data;
+  (response) => response,
 
-    // ── Global success:false handler ─────────────────────────────────────────
-    // Server returns HTTP 2xx but success:false → treat as error globally
-    // so every hook/screen catch block handles it without per-call checks
-    // ─────────────────────────────────────────────────────────────────────────
-    if (data && typeof data === 'object' && data.success === false) {
-      const message = data.message || 'Something went wrong';
-      logger.warn(`⚠️ API success:false — ${response.config.url} — ${message}`);
+  
+  async (error) => {
 
-      const error: any  = new Error(message);
-      error.response    = response;   // keep response accessible
-      error.isApiError  = true;       // flag to distinguish from network errors
+     handleApiError(error);
+
+    const status = error.response?.status;
+    const url = error.config?.url;
+
+    logger.error("📥 API Error:", {
+      status,
+      url,
+      message: error.message,
+    });
+
+    // ✅ HANDLE 401 UNAUTHORIZED (Token Expired or Invalid)
+    if (status === 401) {
+      logger.warn("⚠️ 401 Unauthorized - Token expired or invalid");
+
+      // ✅ Prevent multiple logout calls
+      if (!isLoggingOut) {
+        isLoggingOut = true;
+
+        try {
+          // 1️⃣ Call logout from AuthContext
+          if (authContextRef?.logout && typeof authContextRef.logout === "function") {
+            logger.log("🧹 Calling AuthContext logout...");
+            await authContextRef.logout();
+            logger.log("✅ AuthContext logout completed");
+          } else {
+            logger.error("❌ AuthContext logout function not available");
+          }
+
+          // 2️⃣ Navigate to login screen
+          // if (navigationRef) {
+          //   logger.log("🚀 Navigating to Login...");
+          //   setTimeout(() => {
+          //     navigationRef.reset({
+          //       index: 0,
+          //       routes: [{ name: "Login" }],
+          //     });
+          //   }, 500); // Small delay to ensure logout completes first
+          // } else {
+          //   logger.error("❌ Navigation ref not set!");
+          // }
+        } catch (logoutError) {
+          logger.error("❌ Logout error:", logoutError);
+        } finally {
+          isLoggingOut = false;
+        }
+      } else {
+        logger.log("⏭️ Logout already in progress, skipping...");
+      }
+
       return Promise.reject(error);
     }
 
-    return response;
-  },
-  async (error) => {
-    logger.log("Response Error:", error);
-    handleApiError(error);
-
-    // Optional: handle 401 globally here (e.g., logout)
-    if (error.response?.status === 401) {
-      logger.warn("⚠️ 401 Unauthorized - Session expired, logging out...");
-      logger.log("logoutFunction:", logoutFunction);
-      logger.log("logoutFunction.current:", logoutFunction?.current);
-
-      if (logoutFunction && typeof logoutFunction.current === 'function') {
-        logger.log("🔥 Calling logout function...");
-        await logoutFunction.current();
-        logger.log("✅ Logout completed");
-      } else {
-        logger.error("Logout function not properly set!");
-      }
-    }
-
+    // ✅ HANDLE OTHER ERRORS
+   
     return Promise.reject(error);
   }
 );

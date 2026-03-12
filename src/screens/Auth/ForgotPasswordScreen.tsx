@@ -19,7 +19,7 @@
     import { LoaderContext } from '../../context/LoaderContext';
     import { commonStyle } from '../../styles/CommonStyles';
     const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.45;
     const ForgotPasswordScreen = ({ navigation, route }) => {
       
         const { fromOtp = false, email = '', reset_token = '' } = route.params || {};
@@ -152,10 +152,10 @@ const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                <ScrollView
+                {/* <ScrollView
                     contentContainerStyle={{ flexGrow: 1 }}
                     keyboardShouldPersistTaps="handled"
-                >
+                > */}
                     <View style={{ flex: 1 }}>
                         <Image
                             source={require('../../assets/images/forgotbg.png')}
@@ -314,7 +314,7 @@ const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
 
                         }} />
 
-                </ScrollView>
+                {/* </ScrollView> */}
             </KeyboardAvoidingView>
         );
     };

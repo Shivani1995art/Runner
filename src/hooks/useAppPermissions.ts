@@ -295,7 +295,7 @@ export const useAppPermissions = () => {
       : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
 
     const currentStatus = await check(permission);
-
+logger.log("-======currentStatus======",currentStatus);
     // 1. If Denied (First time or "Ask Every Time" reset)
     if (currentStatus === RESULTS.DENIED) {
       return { status: 'DENIED' }; // This will trigger the "Grant Permission" modal

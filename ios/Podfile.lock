@@ -3571,7 +3571,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-safe-area-context (5.6.2):
+  - react-native-safe-area-context (5.7.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3589,8 +3589,8 @@ PODS:
     - React-graphics
     - React-ImageManager
     - React-jsi
-    - react-native-safe-area-context/common (= 5.6.2)
-    - react-native-safe-area-context/fabric (= 5.6.2)
+    - react-native-safe-area-context/common (= 5.7.0)
+    - react-native-safe-area-context/fabric (= 5.7.0)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -3601,7 +3601,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-safe-area-context/common (5.6.2):
+  - react-native-safe-area-context/common (5.7.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3629,7 +3629,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-safe-area-context/fabric (5.6.2):
+  - react-native-safe-area-context/fabric (5.7.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -4243,7 +4243,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNDeviceInfo (15.0.1):
+  - RNDeviceInfo (15.0.2):
     - React-Core
   - RNFBApp (23.8.6):
     - boost
@@ -4365,7 +4365,7 @@ PODS:
     - RNFBApp
     - SocketRocket
     - Yoga
-  - RNGestureHandler (2.29.1):
+  - RNGestureHandler (2.30.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -4399,7 +4399,7 @@ PODS:
     - RNNotifee/NotifeeCore (= 9.1.8)
   - RNNotifee/NotifeeCore (9.1.8):
     - React-Core
-  - RNPermissions (5.4.4):
+  - RNPermissions (5.5.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -4519,7 +4519,7 @@ PODS:
     - RNWorklets
     - SocketRocket
     - Yoga
-  - RNScreens (4.18.0):
+  - RNScreens (4.24.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -4546,10 +4546,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNScreens/common (= 4.18.0)
+    - RNScreens/common (= 4.24.0)
     - SocketRocket
     - Yoga
-  - RNScreens/common (4.18.0):
+  - RNScreens/common (4.24.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -4578,7 +4578,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNSVG (15.15.1):
+  - RNSVG (15.15.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -4604,10 +4604,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNSVG/common (= 15.15.1)
+    - RNSVG/common (= 15.15.3)
     - SocketRocket
     - Yoga
-  - RNSVG/common (15.15.1):
+  - RNSVG/common (15.15.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -5132,7 +5132,7 @@ SPEC CHECKSUMS:
   react-native-keyboard-controller: 7104a3b25e178a97bd7071e13b0e6ba3e08592b2
   react-native-maps: cd04497f61f6105fae21395c13829b130ab529cd
   react-native-netinfo: c3944e83b347f7cc0d7e06df93f9d38a70c2a2ed
-  react-native-safe-area-context: fea29ae0275beaa22f72d0a8be1eb0ab09c3feae
+  react-native-safe-area-context: 7e0ba374906d8f5009aaf96cd19d4866d8de342b
   React-NativeModulesApple: 8ec75f44d317474025c5540b67ac1af838379dc4
   React-networking: b7a6de066cc739c038f7342932217d6fd362d329
   React-oscompat: aedc0afbded67280de6bb6bfac8cfde0389e2b33
@@ -5167,17 +5167,17 @@ SPEC CHECKSUMS:
   ReactCodegen: 7fc8ea04a59f2182fc04721b60fe8a95b1859120
   ReactCommon: ac4ba7ee2c810157492ac424e77ea248f33c6ac4
   RNCAsyncStorage: 8857fb173af29664cb90897903902dc8533e36cc
-  RNDeviceInfo: 53f9c84e28e854a308d3e548e25ef120b4615531
+  RNDeviceInfo: d79872e11c8e9c4de0d65b0ee6e0cee719f37fea
   RNFBApp: 89ff3b29e269746a9caa67984dede1cf457790d9
   RNFBDatabase: 21b7b48d8e731c2b33adb84aff68dd50a18465fb
   RNFBFirestore: 6572f526a0d704f2979b6939445515efd9c1f49b
   RNFBMessaging: 9ccf936a6df8ece3f15b0e4baf43d0d175d56b4d
-  RNGestureHandler: f9686f4269f5d25a6b293dcc7cc83ab8b6459416
+  RNGestureHandler: 1f7ac76fa9d6ffedfdde38ce781442ffadac8880
   RNNotifee: 4a6ee5c7deaf00e005050052d73ee6315dff7ec9
-  RNPermissions: dd8e7c572bc18692a55e82e20e1495135c31644e
+  RNPermissions: 6f3e309e9f68c2ae9b93286f535dfac00ba7c53e
   RNReanimated: 0c6fc598ffe57483839d5ca2a7c50ff4f80eb194
-  RNScreens: de996b48c82245c0b68c677da3334c2061e2a951
-  RNSVG: 5bd1e478698eb9e5cc8f926157333ac814468064
+  RNScreens: 656e050942ae9445f5cc45d05d57f13ce7a4c8e4
+  RNSVG: 4d484ec4a8cb484c1c0e33972670724e194dba09
   RNWorklets: 79252e2fa12db14970f4e881168ce82a4d1fe823
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: faec420ba5f8a2bd196f26048a0557882d40e5b9

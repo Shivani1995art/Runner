@@ -10,6 +10,7 @@
 		06BC068D41EE4BBF8B7D1B1D /* Inter_24pt-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C2BCC1D481D24B5FA6697EBB /* Inter_24pt-Regular.ttf */; };
 		0CE330EE3B03F7F34FDE957A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		105DB5772F4C39AE009EFB72 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 105DB5762F4C39AE009EFB72 /* GoogleService-Info.plist */; };
+		107769DC2F5F05D900DC3FDD /* honestbee.wav in Resources */ = {isa = PBXBuildFile; fileRef = 107769DB2F5F05D900DC3FDD /* honestbee.wav */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		4AA30032CA324E4E956F4CE8 /* Inter_18pt-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D31953F122FE44A994BAB119 /* Inter_18pt-ExtraBold.ttf */; };
 		4C3E993E5AAE4967A585A853 /* JosefinSans-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8FA299E9B0BB4A14ACFA0B39 /* JosefinSans-BoldItalic.ttf */; };
@@ -33,6 +34,7 @@
 /* Begin PBXFileReference section */
 		100A69A62F46FCC700285A51 /* RunnerApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = RunnerApp.entitlements; path = RunnerApp/RunnerApp.entitlements; sourceTree = "<group>"; };
 		105DB5762F4C39AE009EFB72 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		107769DB2F5F05D900DC3FDD /* honestbee.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = honestbee.wav; sourceTree = "<group>"; };
 		1147F0BE0DC04F1EB1789434 /* Inter_24pt-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter_24pt-Light.ttf"; path = "../src/assets/fonts/Inter_24pt-Light.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* RunnerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RunnerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = RunnerApp/Images.xcassets; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				107769DB2F5F05D900DC3FDD /* honestbee.wav */,
 				105DB5762F4C39AE009EFB72 /* GoogleService-Info.plist */,
 				13B07FAE1A68108700A75B9A /* RunnerApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
@@ -218,6 +221,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				107769DC2F5F05D900DC3FDD /* honestbee.wav in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				0CE330EE3B03F7F34FDE957A /* PrivacyInfo.xcprivacy in Resources */,

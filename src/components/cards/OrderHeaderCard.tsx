@@ -12,13 +12,14 @@ export default function OrderHeaderCard({ image, title, subtitle, price, onCance
       <View style={styles.row}>
         <View style={[styles.imageContainer]}>
           <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
+           
         </View>
 
-   
-
+    
+  
           <View style={styles.infoContainer}>
-          <Text style={styles.title}>{title}</Text>
-            <InfoRow
+         <Text style={styles.title}>{title}</Text>
+            {/* <InfoRow
               Icon={<MapPin size={16} color={Colors.borderColor1} />}
               title="Location"
               subtitle={location || "Dream Tree Blvd, Lake Buena"}
@@ -28,7 +29,7 @@ export default function OrderHeaderCard({ image, title, subtitle, price, onCance
               Icon={<Map size={16} color={Colors.borderColor1} />}
               title="Distance"
               subtitle={distance || "800 M"}
-            />
+            /> */}
           </View>
 
         </View>
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: s(12),
     borderRadius: ms(16),
-    marginBottom: vs(16),
+   // marginBottom: vs(16),
 
    
     marginHorizontal: ms(10),
@@ -78,6 +79,11 @@ const styles = StyleSheet.create({
     fontFamily: Typography.SemiBold.fontFamily,
     fontWeight: "600",
     color: Colors.black,
+    justifyContent:'center',
+    alignItems:'center',
+    alignSelf:"center",
+    textAlign:'left',
+
   },
   subtitle: {
     fontSize: fontSize(14),
@@ -117,7 +123,11 @@ const styles = StyleSheet.create({
     borderRadius: ms(18),
   },
   infoContainer: {
-    flex: 1,
+     height: ms(100),
+     width: "65%",
     justifyContent: "center",
+   // backgroundColor: "red",
+    alignContent:"center",
+    alignItems:"center"
   },
 });

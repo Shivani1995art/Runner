@@ -28,7 +28,7 @@ import { getToken, setToken } from '../../utils/token'
 import { logger } from '../../utils/logger';
 import { commonStyle } from '../../styles/CommonStyles';
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.45;
 const OtpScreen = ({ navigation, route }: any) => {
     const { isRegister = false, email, password, isforgot = false } = route.params || {};
     const [focusedIndex, setFocusedIndex] = useState(-1);

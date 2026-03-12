@@ -760,6 +760,7 @@ import {
   Linking,
   Alert,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomerInfoCard from '../../components/cards/CustmerInfoCard';
@@ -767,7 +768,7 @@ import InfoRow from '../../components/Row/InfoRow';
 import Colors from '../../utils/colors';
 import { fontSize, hp, ms, vs } from '../../utils/responsive';
 import { Typography } from '../../utils/typography';
-import { MapPin, Map, Store } from 'lucide-react-native';
+import { MapPin, Map, Store, RotateCw } from 'lucide-react-native';
 import CustomButton from '../../components/Buttons/CustomButton';
 import BottomGradientBottomSheet from '../../components/modals/BottomGradientBottomSheet';
 import SuccessModal from '../../components/modals/SuccessModal';
@@ -830,7 +831,7 @@ const chatUnsubscribeRef = useRef<(() => void) | null>(null);
   const [isDelivering, setIsDelivering]         = useState(false);
   const [isDelivered, setIsDelivered]           = useState(false);
   const [isNavigatingAway, setIsNavigatingAway] = useState(false);
-
+  const [isManualReloading, setIsManualReloading] = useState(false);
   // ── Refs ──────────────────────────────────────────────────────────────────
   // Ref to freeze delivery state synchronously — prevents stale closure issues
   const isDeliveredRef  = useRef(false);
@@ -878,7 +879,7 @@ const chatUnsubscribeRef = useRef<(() => void) | null>(null);
 
   const orderId      = order?.id            ?? '—';
   const customerNote = order?.delivery_text ?? '';
-  const orderLines   = order?.OrderLines    ?? [];
+  const orderLines   = order?.items    ?? [];
   const totalCents   = parseInt(order?.total_cents ?? '0', 10);
   const currency     = order?.currency      ?? 'USD';
 
@@ -1241,10 +1242,18 @@ const handleChat = () => {
     : itemCount === 1 ? 0.15
     : itemCount === 2 ? 0.20
     : itemCount === 3 ? 0.25
-    : itemCount <= 5  ? 0.55
-    : 0.55;
+    : itemCount <= 5  ? 0.25
+    : 0.25;
 
-
+const handleManualReload = async () => {
+  setIsManualReloading(true);
+  try {
+    await fetchOrderDetail(Number(orderId));
+  //  toast?.('Order updated', 'success', 1500);
+  } finally {
+    setIsManualReloading(false);
+  }
+};
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -1259,8 +1268,11 @@ const handleChat = () => {
   showsVerticalScrollIndicator={false}
 >
 
+
         {/* ── Map ─────────────────────────────────────────────────────────── */}
         <View style={[styles.mapContainer, { height: MAP_HEIGHT }]}>
+         
+          
           {mapRegion ? (
             <MapViewComponent
               runnerCoords={runnerCoords}
@@ -1432,7 +1444,23 @@ const handleChat = () => {
       </ScrollView>
 
       {/* ── Bottom Sheet ──────────────────────────────────────────────────── */}
-     
+      {/* ✅ NEW: Floating Reload Button */}
+      <TouchableOpacity
+        style={[
+          styles.floatingReloadButton,
+          { top: insets.top + ms(16) },
+          isManualReloading && styles.floatingButtonDisabled,
+        ]}
+        onPress={handleManualReload}
+        disabled={isManualReloading || isDelivered}
+        activeOpacity={0.7}
+      >
+        {isManualReloading ? (
+          <ActivityIndicator size="small" color={Colors.white} />
+        ) : (
+          <RotateCw size={ms(20)} color={Colors.white} strokeWidth={2.5} />
+        )}
+      </TouchableOpacity>
 
 {/* ── Bottom Sheet with preview and expand button ────────────────── */}
 
@@ -1668,6 +1696,29 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   buttonDisabled: { opacity: 0.7 },
+
+
+  // ✅ NEW: Floating Reload Button
+  floatingReloadButton: {
+    position: 'absolute',
+    right: ms(16),
+    width: ms(50),
+    height: ms(50),
+    borderRadius: ms(25),
+    backgroundColor: Colors.orange,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    zIndex: 10,
+  },
+  floatingButtonDisabled: {
+    opacity: 0.6,
+  },
+
 });
 
 

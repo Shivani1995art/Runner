@@ -14,12 +14,15 @@ export const handleApiError = (error: unknown): void => {
     console.warn('Toast handler not initialized');
     return;
   }
+
+   logger.error('==== Error ====', error);
+
   if (error instanceof AxiosError) {
-    logger.error('==== Error ====', error);
+   // logger.error('==== Error ====', error);
 
     const status = error.response?.status;
     const data = error.response?.data as ApiErrorResponse | undefined;
-
+logger.log('==== status ====', status);
     if (!error.response) {
       toast('Please check your internet connection.', 'error', 3000);
       return;

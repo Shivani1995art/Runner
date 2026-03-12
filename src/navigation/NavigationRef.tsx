@@ -8,3 +8,12 @@ export function navigate(name: string, params?: object) {
     navigationRef.navigate(name as never, params as never);
   }
 }
+
+export function resetToLogin() {
+  if (navigationRef.isReady()) {
+    navigationRef.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  }
+}

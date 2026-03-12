@@ -608,7 +608,7 @@ const ordersReducer = (state: OrdersState, action: OrdersAction): OrdersState =>
       return { ...state, lastStatusFetchTime: action.payload };
 
     case 'RESET_ORDERS':
-      return { ...state, orders: [], activeAssignment: null, runnerStatus: null };
+      return { ...state, orders: [], activeAssignment: null };
 
     default:
       return state;
@@ -779,10 +779,10 @@ export const OrdersProvider: React.FC<OrdersProviderProps> = ({
         if (status?.current_assignment) {
           dispatch({ type: 'SET_ACTIVE_ASSIGNMENT', payload: status.current_assignment });
           onActiveOrder?.(status.current_assignment);
-          return { ...status, current_assignment: true } as any;
+          return status;
         }
 
-        return { is_on_duty: status?.is_on_duty, current_assignment: false };
+        return status;
       } catch (error) {
         logger.log('❌ loadRunnerStatus error:', error);
         return null;
@@ -796,7 +796,7 @@ export const OrdersProvider: React.FC<OrdersProviderProps> = ({
   // ── toggleRunnerDuty ────────────────────────────────────────────────────────
   const toggleRunnerDuty = useCallback(
     async (latitude?: number, longitude?: number) => {
-      if (state.isLoadingStatus) return;
+      //if (state.isLoadingStatus) return;
 
       try {
         dispatch({ type: 'SET_IS_LOADING_STATUS', payload: true });
@@ -807,8 +807,16 @@ export const OrdersProvider: React.FC<OrdersProviderProps> = ({
           const isOnDuty = res.data?.is_on_duty;
         //  toast(res?.message || 'Status updated', 'success', 3000);
 
-          dispatch({ type: 'SET_RUNNER_STATUS', payload: res.data });
+          dispatch({
+            type: 'SET_RUNNER_STATUS',
+            payload: {
+              ...(state.runnerStatus || {}),
+              is_on_duty: isOnDuty,
+            },
+          });
           dispatch({ type: 'SET_LAST_STATUS_FETCH_TIME', payload: Date.now() });
+
+          await loadRunnerStatus(undefined, true);
 
           if (!isOnDuty) {
             dispatch({ type: 'RESET_ORDERS' });
@@ -826,7 +834,7 @@ export const OrdersProvider: React.FC<OrdersProviderProps> = ({
         dispatch({ type: 'SET_IS_LOADING_STATUS', payload: false });
       }
     },
-    [state.isLoadingStatus]
+    [state.isLoadingStatus, state.runnerStatus, loadOrders, loadRunnerStatus]
   );
 
   // ── handleAcceptOrder ───────────────────────────────────────────────────────
@@ -979,7 +987,7 @@ export const OrdersProvider: React.FC<OrdersProviderProps> = ({
   // ────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.id || state.orders.length === 0) return;
-
+logger.log('=======syncOrders========')
     const interval = setInterval(() => {
       syncOrders();
     }, 45000);

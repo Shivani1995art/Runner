@@ -23,7 +23,7 @@ import { navBarHeight } from '../../utils/NavBarHeight';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = Math.max(
   520,
-  Math.floor(Dimensions.get('window').height * 0.55)
+  Math.floor(Dimensions.get('window').height * 0.50)
 );
 logger.log('CARD_HEIGHT', CARD_HEIGHT);
 
@@ -106,12 +106,12 @@ const LoginScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }} edges={['bottom']}>
 
-            <ScrollView
+            {/* <ScrollView
                 contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="handled"
                 removeClippedSubviews={false}
                 automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-            >
+            > */}
 
           <StatusBar
                     barStyle="light-content"
@@ -204,7 +204,7 @@ const LoginScreen = ({ navigation }) => {
                     </View>
                 {/* </KeyboardAvoidingView> */}
             </View>
-            </ScrollView>
+            {/* </ScrollView> */}
         </SafeAreaView>
     );
 };
