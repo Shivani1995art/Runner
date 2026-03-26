@@ -764,10 +764,10 @@ const RunnerOrderItemsModal = ({
                 </View>
               </BottomSheetScrollView>
             )}
-          </View>
+          </View>s
 
           {/* Button - Fixed at bottom */}
-          <View style={[styles.ctaContainer, { paddingBottom: vs(12) + insets.bottom }]}>
+          <View style={[styles.ctaContainer, { paddingBottom: insets.bottom }]}>
             {!isPickedUp ? (
               <CustomButton
                 title={isPickingUp ? 'Confirming...' : 'Confirm Pickup from Restaurant'}
